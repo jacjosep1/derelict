@@ -102,26 +102,26 @@ private:
      * image, on all its width. The pattern cannot be used at any other place in
      * the output image.
      */
-    void init_ground(WFC& wfc, const Array2D<T>& input,
-        const std::vector<Array2D<T>>& patterns,
-        const OverlappingWFCOptions& options) noexcept {
+    void init_ground(WFC& wfc_, const Array2D<T>& input_,
+        const std::vector<Array2D<T>>& patterns_,
+        const OverlappingWFCOptions& options_) noexcept {
         unsigned ground_pattern_id =
-            get_ground_pattern_id(input, patterns, options);
+            get_ground_pattern_id(input_, patterns_, options_);
 
         // Place the pattern in the ground.
-        for (unsigned j = 0; j < options.get_wave_width(); j++) {
-            set_pattern(ground_pattern_id, options.get_wave_height() - 1, j);
+        for (unsigned j = 0; j < options_.get_wave_width(); j++) {
+            set_pattern(ground_pattern_id, options_.get_wave_height() - 1, j);
         }
 
         // Remove the pattern from the other positions.
-        for (unsigned i = 0; i < options.get_wave_height() - 1; i++) {
-            for (unsigned j = 0; j < options.get_wave_width(); j++) {
-                wfc.remove_wave_pattern(i, j, ground_pattern_id);
+        for (unsigned i = 0; i < options_.get_wave_height() - 1; i++) {
+            for (unsigned j = 0; j < options_.get_wave_width(); j++) {
+                wfc_.remove_wave_pattern(i, j, ground_pattern_id);
             }
         }
 
         // Propagate the information with wfc.
-        wfc.propagate();
+        wfc_.propagate();
     }
 
     /**
@@ -144,7 +144,7 @@ private:
         }
 
         // The pattern exists.
-        assert(false);
+        check(false);
         return 0;
     }
 

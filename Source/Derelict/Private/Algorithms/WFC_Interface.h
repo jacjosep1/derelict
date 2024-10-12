@@ -3,8 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Math/UnrealMathUtility.h"
 #include "Containers/Array.h"
+
 #include "Algorithms/array2D.h"
+#include "Algorithms/OverlappingWFC.h"
+
 #include <functional>
 
 
@@ -36,35 +40,27 @@ struct TArray2D {
 	}
 
 	TArray2D(Array2D<T>& arr_)
-		: size{arr_.width, arr_.height}, data() {
+		: size{static_cast<int32>(arr_.width), static_cast<int32>(arr_.height)}, data() {
 		data.Reserve(arr_.height * arr_.width);
 		for (const T i : arr_.data) data.Add(i);
 	}
 
 	T &Get(location_t location) {
-		check(location.x < size.x && location.y < size.y);
-		check(location.x >= 0 && location.y >= 0);
-		return data[location.y + location.x * size.x];
+		return data[location.x + location.y * size.x];
 	}
 
-	Array2D<T> ToUnsafe() {
-		std::vector<T> new_data{};
-		new_data.reserve(data.Num());
-		for (const T i : data) new_data.push_back(i);
-		return Array2D<T>{size.y, size.x, std::move(new_data)};
-	}
-
-	void Loop(const std::function<void(T&, location_t)> func) {
-		for (int32 r = 0; r < size.y; r++) for (int32 c = 0; c < size.x; c++)
-			func(Get({ c, r }), { c, r }); 
+	Array2D<T> ToUnsafe() const {
+		Array2D<T> out(static_cast<size_t>(size.x), static_cast<size_t>(size.y));
+		for (size_t i = 0; i < data.Num(); i++) out.data[i] = data[i];
+		return out;
 	}
 };
 
 /**
- * Interface for handling WFC with UE data structures. 
+ * Interface for handling WFC
  */
 namespace WFC_Interface {
 
-
+TArray2D<int32> Generate_WFC_Region(const TArray2D<int32>& seed, location_t size);
 	
-}
+} // namespace WFC_Interface
