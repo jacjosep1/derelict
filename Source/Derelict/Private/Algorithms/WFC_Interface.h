@@ -61,6 +61,6 @@ struct TArray2D {
  */
 namespace WFC_Interface {
 
-TArray2D<int32> Generate_WFC_Region(const TArray2D<int32>& seed, location_t size);
+TArray2D<TCHAR> Generate_WFC_Region(const TArray2D<TCHAR>& seed, location_t size);
 	
 } // namespace WFC_Interface

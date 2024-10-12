@@ -14,6 +14,6 @@ class DERELICT_API UAlgorithmTester : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "WFC Testing")
-	static TArray<int32> SimpleImageWFC(int32 SizeX, int32 SizeY, TArray<int32> Seed, int32 SeedDimension);
+	static TArray<FString> SimpleImageWFC(int32 SizeX, int32 SizeY, TArray<FString> Seed);
 	
 };
