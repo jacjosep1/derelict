@@ -1,66 +1,88 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Math/UnrealMathUtility.h"
 #include "Containers/Array.h"
+#include "Engine/DataTable.h"
+#include "Structs/CommonStructs.h"
 
 #include "Algorithms/array2D.h"
 #include "Algorithms/OverlappingWFC.h"
 
 #include <functional>
 
-
-struct location_t {
-	int32 x{ 0 };
-	int32 y{ 0 };
-
-	location_t operator+(const location_t& other) const {
-		return location_t{ x + other.x, y + other.y };
-	}
-};
-
-/**
-* Custom 2D array structure
-*/
-template<typename T>
-struct TArray2D {
-	location_t size;
-	TArray<T> data;
-
-	TArray2D(location_t size_)
-		: size(size_), data() {
-		data.SetNum(size_.x * size_.y);
-	}
-
-	TArray2D(location_t size_, T _value)
-		: size(size_), data() {
-		data.Init(_value, size_.x * size_.y);
-	}
-
-	TArray2D(Array2D<T>& arr_)
-		: size{static_cast<int32>(arr_.width), static_cast<int32>(arr_.height)}, data() {
-		data.Reserve(arr_.height * arr_.width);
-		for (const T i : arr_.data) data.Add(i);
-	}
-
-	T &Get(location_t location) {
-		return data[location.x + location.y * size.x];
-	}
-
-	Array2D<T> ToUnsafe() const {
-		Array2D<T> out(static_cast<size_t>(size.x), static_cast<size_t>(size.y));
-		for (size_t i = 0; i < data.Num(); i++) out.data[i] = data[i];
-		return out;
-	}
-};
+typedef std::vector<std::vector<TCHAR>> pattern_t;
 
 /**
  * Interface for handling WFC
  */
 namespace WFC_Interface {
+	
+	// Define special characters
+	static TCHAR S_ = '_'; // The blank character to use for empty space. 
+	static TCHAR SH = 'c'; // The character to use for connecting hallways.
+	static TCHAR SR = 'B'; // The character to use for rooms.
+	void SetupCharSet(const FString& Set);
 
-TArray2D<TCHAR> Generate_WFC_Region(const TArray2D<TCHAR>& seed, location_t size);
+	// Define special patterns
+	// Empty space
+	static pattern_t P_EMPTY_H() {
+		return {
+			{S_, S_, S_},
+			{S_, S_, S_},
+			{S_, S_, S_}
+		};
+	}
+	// Horizontal hallway
+	static pattern_t P_HALLWAY_H() {
+		return {
+			{S_, S_, S_},
+			{SH, SH, SH},
+			{S_, S_, S_}
+		};
+	}
+	// Horizontal hallway left
+	static pattern_t P_HALLWAY_HL() {
+		return {
+			{S_, S_, SR},
+			{SH, SH, SR},
+			{S_, S_, SR}
+		};
+	}
+	// Horizontal hallway lright
+	static pattern_t P_HALLWAY_HR() {
+		return {
+			{SR, S_, S_},
+			{SR, SH, SH},
+			{SR, S_, S_}
+		};
+	}
+
+	// WFC configuration
+	constexpr bool			PERIODIC_INPUT	= true;
+	constexpr bool			PERIODIC_OUTPUT = false;
+	constexpr bool			GROUND			= false; 
+	constexpr int32			PATTERNS_SIZE	= 3;
+	constexpr unsigned int	SYMMETRY		= 8;
+
+	// The max number of times to fail WFC before exiting. 
+	constexpr size_t FAIL_COUNT = 20;
+
+	// Read a data table representing an image and convert into a 2D array of labels. Optionally prints the data. 
+	Array2D<TCHAR> ReadImage_CSV(UDataTable* Data, bool DebugString = false);
+
+	// Generate a region of a certain size using WFC and a seed determining pattern rules. 
+	Array2D<TCHAR> Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size);
+
+	// Starting from the seed, remove everything except except the locally contiguous region.
+	// If null=false, select adjacent pixels of the specified color.
+	// If null=true, select adjacent pixels that are NOT the specified color.
+	// Convention: removed parts are replaced by null_space. 
+	Array2D<TCHAR> SelectByColor(const Array2D<TCHAR>& region, location_t seed, TCHAR color, bool null);
+
+	// Precollapse a group of points to a specific pattern before running the WFC. 
+	void PreCollapsePoints(OverlappingWFC<TCHAR>& wfc, const std::vector<location_t> &points, const pattern_t &pattern);
 	
 } // namespace WFC_Interface

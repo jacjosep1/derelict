@@ -11,7 +11,12 @@
 			"AdditionalDependencies": [
 				"Engine"
 			]
-		}
+		},
+		{
+      			"Name": "XmlParser",
+      			"Type": "Runtime",
+      			"LoadingPhase": "Default"
+    		}
 	],
 	"Plugins": [
 		{

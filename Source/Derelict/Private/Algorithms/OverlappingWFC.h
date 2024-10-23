@@ -342,6 +342,16 @@ public:
         auto pattern_id = get_pattern_id(pattern);
 
         if (pattern_id == std::nullopt || i >= options.get_wave_height() || j >= options.get_wave_width()) {
+            if (pattern_id == std::nullopt) 
+                GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Null pattern"));
+            if (i >= options.get_wave_height() || j >= options.get_wave_width()) {
+                FString o = TEXT("i=");
+                o.AppendInt(i);
+                o.Append(TEXT(" wh="));
+                o.AppendInt(options.get_wave_height());
+                GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, o);
+            }
+
             return false;
         }
 

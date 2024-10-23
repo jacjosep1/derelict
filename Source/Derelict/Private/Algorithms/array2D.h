@@ -4,6 +4,15 @@
 
 #include <vector>
 
+struct location_t {
+    int32 x{ 0 };
+    int32 y{ 0 };
+
+    location_t operator+(const location_t& other) const {
+        return location_t{ x + other.x, y + other.y };
+    }
+};
+
 /**
  * Represent a 2D array.
  * The 2D array is stored in a single array, to improve cache usage.
@@ -16,6 +25,43 @@ public:
      */
     std::size_t height;
     std::size_t width;
+
+    Array2D() {}
+
+    void Init(location_t size, T value) {
+        height = size.x;
+        width = size.y;
+        data.resize(size.x * size.y);
+    }
+
+    Array2D(location_t size)
+        : height(size.x), width(size.y), data(size.x * size.y) {}
+
+    Array2D(location_t size, T value)
+        : height(size.x), width(size.y), data(size.x * size.y, value) {}
+
+    Array2D(location_t size, const std::vector<std::vector<T>> values)
+        : height(size.x), width(size.y), data(size.x* size.y) {
+        for (size_t i = 0; i < values.size(); i++) for (size_t j = 0; j < values[i].size(); j++)
+            get(i, j) = values[i][j];
+    }
+
+    void DebugPrint() const {
+        for (size_t i = 0; i < height; i++) {
+            FString f = TEXT("");
+            for (size_t j = 0; j < width; j++)
+                f.AppendChar(get(i, j));
+            GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, f);
+        }
+    }
+
+    T& get(location_t location) {
+        return get(location.x, location.y);
+    }
+
+    const T& get(location_t location) const {
+        return get(location.x, location.y);
+    }
 
     /**
      * The array containing the data of the 2D array.

@@ -17,38 +17,39 @@ static constexpr location_t directions[4]
 * @arg seed The starting location
 * @arg filter A function that takes in the current pixel should return true 
 *      iff that pixel should be included in the region.
+* @arg empty What to fill for empty regions.
 * 
-* @returns A list of pixels in the contiguous region. 
+* @returns The input image with only the contiguous region.
 */
 template<typename T>
-std::vector<location_t> FloodFill(const TArray2D<T>& input, location_t seed, 
-	const std::function<bool(const T&)> filter) {
+Array2D<T> FloodFill(const Array2D<T>& input, location_t seed,
+	const std::function<bool(const T&)> filter, const T& empty) {
 
-	TArray2D<char> visited(input.size, 0);
-	std::vector<location_t> region;
-	T &start_color = input.Get(seed);
+	Array2D<char> visited(input.height, input.width, 0);
+	Array2D<T> region(input.height, input.width, empty);
+	const T &start_color = input.get(seed);
 
 	std::queue<location_t> pixel_queue;
 	pixel_queue.push(seed);
-	visited.Get(seed) = 1;
+	visited.get(seed) = 1;
 
 	while (!pixel_queue.empty()) {
 		location_t pixel = pixel_queue.front();
 		pixel_queue.pop();
-		region.push_back(pixel);
+		region.get(pixel) = input.get(pixel);
 
 		for (const location_t& dir : directions) {
 			location_t n = pixel + dir;
 
-			if (n.x >= 0 && n.x < input.size.x
-				&& n.y >= 0 && n.y < input.size.y
-				&& visited.Get(n) == 0 && filter(n)) {
+			if (n.x >= 0 && n.x < input.height
+				&& n.y >= 0 && n.y < input.width
+				&& visited.get(n) == 0 && filter(input.get(n))) {
 
-				visited.Get(n) = 1;
+				visited.get(n) = 1;
 				pixel_queue.push(n);
 			}
 		}
 	}
 
-	return std::move(region);
+	return region;
 }
