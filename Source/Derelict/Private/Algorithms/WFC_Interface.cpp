@@ -48,6 +48,13 @@ Array2D<TCHAR> WFC_Interface::ReadImage_CSV(UDataTable* Data, bool DebugString) 
 }
 
 Array2D<TCHAR> WFC_Interface::Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size) {
+
+    // Make room for border
+    auto crop_amt = PATTERNS_SIZE - 1;
+    size.x += crop_amt * 2;
+    size.y += crop_amt * 2;
+
+    // Config
 	OverlappingWFCOptions options;
 	options.periodic_input =    PERIODIC_INPUT;
 	options.periodic_output =   PERIODIC_OUTPUT;
@@ -58,45 +65,40 @@ Array2D<TCHAR> WFC_Interface::Generate_WFC_Region(const Array2D<TCHAR>& seed, lo
 	options.pattern_size =      PATTERNS_SIZE;
 
 	for (size_t i = 0; i < FAIL_COUNT; i++) { // TODO - make it so this never fails. 
-        //GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, FString::FromInt(options.pattern_size));
-		OverlappingWFC<TCHAR> wfc(seed, options, FMath::RandRange(1, 100000));
+		OverlappingWFC<TCHAR> wfc(seed, options, FMath::RandRange(1, MAX_INT32));
 
-        // Fill in border so there aren't dead ends
-        // TODO - move this and generalize it. 
-        std::vector<location_t> Epoints_of_interest;
-        const int32 subgrid_x = size.x / PATTERNS_SIZE;
-        const int32 subgrid_y = size.y / PATTERNS_SIZE;
-        Epoints_of_interest.reserve(2*subgrid_x + 2* subgrid_y);
+        const std::vector<ExitLocation> exits{
+            {E_LEFT, 1},
+            {E_TOP, 3}
+        };
 
-        const int32 exit_x = 7 * PATTERNS_SIZE;
-        for (int32 j = 0; j < subgrid_x; j++) 
-            if (j*PATTERNS_SIZE != exit_x) 
-                Epoints_of_interest.push_back({ j * PATTERNS_SIZE, 0 });
-        for (int32 j = 0; j < subgrid_y; j++) Epoints_of_interest.push_back({ 0, j * PATTERNS_SIZE });
-        for (int32 j = 0; j < subgrid_x; j++)
-            if (j * PATTERNS_SIZE != exit_x)
-                Epoints_of_interest.push_back({ j * PATTERNS_SIZE, size.y - PATTERNS_SIZE });
-        for (int32 j = 0; j < subgrid_y; j++) Epoints_of_interest.push_back({ size.x - PATTERNS_SIZE, j * PATTERNS_SIZE });
-
-        PreCollapsePoints(wfc, Epoints_of_interest, P_EMPTY_H());
-
-        // Fill in edge hallways. 
-        // TODO - vertical. 
-        PreCollapsePoints(wfc, { {exit_x, 0} },                      P_HALLWAY_H());
-        PreCollapsePoints(wfc, { {exit_x, size.y - PATTERNS_SIZE} }, P_HALLWAY_H());
-
+        PreCollapseBorder(wfc, exits);
 		auto out = wfc.run();
 
         if (out.has_value()) {
-            // Only select contiguous region.
-            auto out_cont = SelectByColor(*out, { exit_x + 1, 0 }, S_, true);
+
+            // Only select contiguous region from an exit. Assume center is filled. 
+            check(exits.size() > 0);
+            auto out_cont = SelectByColor(*out, exits[0].offset_physical(size, true), S_, true);
 
             // Verify there is a path from exit to entrance
-            if (out_cont.get({exit_x + 1, size.y - PATTERNS_SIZE}) == SH)
+            bool invalidate = false;
+            for (const auto& exit : exits)
+                if (out_cont.get(exit.offset_physical(size, true)) == S_) { // Check for blank spot centered at the exits
+                    invalidate = true;
+                    GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Invalid exit path"));
+                }
+            if (!invalidate) {
+                // Crop to ~border
+                out_cont = out_cont.center_crop(crop_amt);
                 return out_cont;
+            }
+        }
+        else {
+            GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("WFC constrained too much"));
         }
 	}
-    GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Skipped generation"));
+    GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Failed WFC too many times"));
 	return Array2D<TCHAR>(location_t{0, 0});
 }
 
@@ -116,4 +118,39 @@ void WFC_Interface::PreCollapsePoints(OverlappingWFC<TCHAR>& wfc, const std::vec
 
         if (!r) GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Failed setpattern"));
     }
+}
+
+void WFC_Interface::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const std::vector<ExitLocation> &exits) {
+    location_t size = { wfc.get_options().out_height, wfc.get_options().out_width };
+
+    const int32 subgrid_x = size.x / PATTERNS_SIZE;
+    const int32 subgrid_y = size.y / PATTERNS_SIZE;
+
+    auto side_fill = [&](int32 max_index, EExitLocation side) {
+        std::vector<location_t> Epoints_of_interest;
+        std::vector<location_t> Hpoints_of_interest;
+        Epoints_of_interest.reserve(max_index);
+        Hpoints_of_interest.reserve(exits.size());
+
+        // Empty border
+        for (int32 j = 0; j < max_index; j++) {
+            bool skip = false;
+            for (const auto& exit : exits)
+                if (exit.side == side && exit.offset == j) skip = true;
+            if (!skip) Epoints_of_interest.push_back(SIDE_TO_PHYSICAL(side, size, j));
+        }
+        PreCollapsePoints(wfc, Epoints_of_interest, P_EMPTY_H());
+
+        // Exit hallways
+        for (const auto& exit : exits) {
+            if (exit.side == side)
+                Hpoints_of_interest.push_back(exit.offset_physical(size));
+        }
+        PreCollapsePoints(wfc, Hpoints_of_interest, EXIT_PATTERNS[side]());
+    };
+
+    side_fill(subgrid_x, E_LEFT);
+    side_fill(subgrid_y, E_TOP);
+    side_fill(subgrid_x, E_RIGHT);
+    side_fill(subgrid_y, E_BOTTOM);
 }

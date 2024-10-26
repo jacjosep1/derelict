@@ -11,6 +11,14 @@ struct location_t {
     location_t operator+(const location_t& other) const {
         return location_t{ x + other.x, y + other.y };
     }
+
+    void DebugPrint() const {
+        FString f = TEXT("");
+        f.AppendInt(x);
+        f.Append(" ");
+        f.AppendInt(y);
+        GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, f);
+    }
 };
 
 /**
@@ -136,6 +144,14 @@ public:
                 sub_array_2d.get(ki, kj) = get((y + ki) % height, (x + kj) % width);
             }
         }
+        return sub_array_2d;
+    }
+
+    Array2D<T> center_crop(std::size_t amount) const noexcept {
+        Array2D<T> sub_array_2d = Array2D<T>(height - amount*2, width - amount*2);
+        for (std::size_t ki = 0; ki < height - amount*2; ki++)
+            for (std::size_t kj = 0; kj < width - amount*2; kj++)
+                sub_array_2d.get(ki, kj) = get(ki+amount, kj+amount);
         return sub_array_2d;
     }
 

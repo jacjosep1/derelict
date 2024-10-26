@@ -172,6 +172,7 @@ private:
         for (unsigned i = 0; i < max_i; i++) {
             for (unsigned j = 0; j < max_j; j++) {
                 // Compute the symmetries of every pattern in the image.
+                check(symmetries.size() == 8);
                 symmetries[0].data =
                     input
                     .get_sub_array(i, j, options.pattern_size, options.pattern_size)
@@ -368,5 +369,9 @@ public:
             return to_image(*result);
         }
         return std::nullopt;
+    }
+
+    const OverlappingWFCOptions& get_options() const {
+        return options;
     }
 };
