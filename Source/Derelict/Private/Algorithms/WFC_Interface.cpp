@@ -4,13 +4,8 @@
 #include "Algorithms/WFC_Interface.h"
 #include "Algorithms/FloodFill.h"
 
-void WFC_Interface::SetupCharSet(const FString& Set) {
-    S_ = Set[0];
-    SH = Set[1];
-    SR = Set[2];
-}
-
-Array2D<TCHAR> WFC_Interface::ReadImage_CSV(UDataTable* Data, bool DebugString) {
+template <typename TPreset>
+Array2D<TCHAR> WFC_Interface<TPreset>::ReadImage_CSV(UDataTable* Data, bool DebugString) {
     if (!Data) {
         UE_LOG(LogTemp, Error, TEXT("DataTable null."));
         return Array2D<TCHAR>();
@@ -47,7 +42,8 @@ Array2D<TCHAR> WFC_Interface::ReadImage_CSV(UDataTable* Data, bool DebugString) 
     return ret;
 }
 
-Array2D<TCHAR> WFC_Interface::Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size) {
+template <typename TPreset>
+Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size) {
 
     // Make room for border
     auto crop_amt = PATTERNS_SIZE - 1;
@@ -67,7 +63,7 @@ Array2D<TCHAR> WFC_Interface::Generate_WFC_Region(const Array2D<TCHAR>& seed, lo
 	for (size_t i = 0; i < FAIL_COUNT; i++) { // TODO - make it so this never fails. 
 		OverlappingWFC<TCHAR> wfc(seed, options, FMath::RandRange(1, MAX_INT32));
 
-        const std::vector<ExitLocation> exits{
+        const std::vector<ExitLocation> exits {
             {E_LEFT, 1},
             {E_TOP, 3}
         };
@@ -79,12 +75,12 @@ Array2D<TCHAR> WFC_Interface::Generate_WFC_Region(const Array2D<TCHAR>& seed, lo
 
             // Only select contiguous region from an exit. Assume center is filled. 
             check(exits.size() > 0);
-            auto out_cont = SelectByColor(*out, exits[0].offset_physical(size, true), S_, true);
+            auto out_cont = SelectByColor(*out, exits[0].offset_physical(size, true), TPreset::S_, true);
 
             // Verify there is a path from exit to entrance
             bool invalidate = false;
             for (const auto& exit : exits)
-                if (out_cont.get(exit.offset_physical(size, true)) == S_) { // Check for blank spot centered at the exits
+                if (out_cont.get(exit.offset_physical(size, true)) == TPreset::S_) { // Check for blank spot centered at the exits
                     invalidate = true;
                     GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Invalid exit path"));
                 }
@@ -102,14 +98,16 @@ Array2D<TCHAR> WFC_Interface::Generate_WFC_Region(const Array2D<TCHAR>& seed, lo
 	return Array2D<TCHAR>(location_t{0, 0});
 }
 
-Array2D<TCHAR> WFC_Interface::SelectByColor(const Array2D<TCHAR>& region, location_t seed, TCHAR color, bool null) {
+template <typename TPreset>
+Array2D<TCHAR> WFC_Interface<TPreset>::SelectByColor(const Array2D<TCHAR>& region, location_t seed, TCHAR color, bool null) {
     std::function<bool(const TCHAR&)> selector;
     if (null) selector = [&](const TCHAR& t) -> bool { return (t != color); };
     else      selector = [&](const TCHAR& t) -> bool { return (t == color); };
-	return FloodFill<TCHAR>(region, seed, selector, S_);
+	return FloodFill<TCHAR>(region, seed, selector, TPreset::S_);
 }
 
-void WFC_Interface::PreCollapsePoints(OverlappingWFC<TCHAR>& wfc, const std::vector<location_t>& points, const pattern_t &pattern) {
+template <typename TPreset>
+void WFC_Interface<TPreset>::PreCollapsePoints(OverlappingWFC<TCHAR>& wfc, const std::vector<location_t>& points, const pattern_t &pattern) {
     check(pattern.size() == PATTERNS_SIZE);
     check(pattern[0].size() == PATTERNS_SIZE);
     for (const auto& point : points) {
@@ -120,13 +118,14 @@ void WFC_Interface::PreCollapsePoints(OverlappingWFC<TCHAR>& wfc, const std::vec
     }
 }
 
-void WFC_Interface::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const std::vector<ExitLocation> &exits) {
+template <typename TPreset>
+void WFC_Interface<TPreset>::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const std::vector<ExitLocation> &exits) {
     location_t size = { wfc.get_options().out_height, wfc.get_options().out_width };
 
     const int32 subgrid_x = size.x / PATTERNS_SIZE;
     const int32 subgrid_y = size.y / PATTERNS_SIZE;
 
-    auto side_fill = [&](int32 max_index, EExitLocation side) {
+    auto side_fill = [&](int32 max_index, const EExitLocation side) {
         std::vector<location_t> Epoints_of_interest;
         std::vector<location_t> Hpoints_of_interest;
         Epoints_of_interest.reserve(max_index);
@@ -139,14 +138,14 @@ void WFC_Interface::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const std::vec
                 if (exit.side == side && exit.offset == j) skip = true;
             if (!skip) Epoints_of_interest.push_back(SIDE_TO_PHYSICAL(side, size, j));
         }
-        PreCollapsePoints(wfc, Epoints_of_interest, P_EMPTY_H());
+        PreCollapsePoints(wfc, Epoints_of_interest, TPreset::P_EMPTY_H);
 
         // Exit hallways
         for (const auto& exit : exits) {
             if (exit.side == side)
                 Hpoints_of_interest.push_back(exit.offset_physical(size));
         }
-        PreCollapsePoints(wfc, Hpoints_of_interest, EXIT_PATTERNS[side]());
+        PreCollapsePoints(wfc, Hpoints_of_interest, *TPreset::EXIT_PATTERNS[side]);
     };
 
     side_fill(subgrid_x, E_LEFT);
@@ -154,3 +153,5 @@ void WFC_Interface::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const std::vec
     side_fill(subgrid_x, E_RIGHT);
     side_fill(subgrid_y, E_BOTTOM);
 }
+
+template class WFC_Interface<PRESET_MediumHalls>;
