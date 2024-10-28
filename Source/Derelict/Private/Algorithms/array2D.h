@@ -4,12 +4,17 @@
 
 #include <vector>
 
+// Struct to represent  grid locations
 struct location_t {
     int32 x{ 0 };
     int32 y{ 0 };
 
     location_t operator+(const location_t& other) const {
         return location_t{ x + other.x, y + other.y };
+    }
+
+    bool operator==(const location_t& other) const {
+        return x == other.x && y == other.y;
     }
 
     void DebugPrint() const {
@@ -20,6 +25,21 @@ struct location_t {
         GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, f);
     }
 };
+
+// Define 4 cardinal directions in terms of location offset. 
+typedef location_t EDir;
+static constexpr EDir E_TOP = { -1, 1 };
+static constexpr EDir E_BOTTOM = { 1, 0 };
+static constexpr EDir E_LEFT = { 0, -1 };
+static constexpr EDir E_RIGHT = { 0, 1 };
+
+namespace std {
+    template <> struct hash<location_t> {
+        std::size_t operator()(const location_t& loc) const noexcept {
+            return std::hash<int32>()(loc.x) ^ (std::hash<int32>()(loc.y) << 1);
+        }
+    };
+}
 
 /**
  * Represent a 2D array.

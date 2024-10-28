@@ -125,7 +125,7 @@ void WFC_Interface<TPreset>::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const
     const int32 subgrid_x = size.x / PATTERNS_SIZE;
     const int32 subgrid_y = size.y / PATTERNS_SIZE;
 
-    auto side_fill = [&](int32 max_index, const EExitLocation side) {
+    auto side_fill = [&](int32 max_index, const EDir side) {
         std::vector<location_t> Epoints_of_interest;
         std::vector<location_t> Hpoints_of_interest;
         Epoints_of_interest.reserve(max_index);

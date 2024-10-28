@@ -34,24 +34,20 @@ template <typename TPreset> class WFC_Interface {
 
 public:
 	// Function to convert from side offsets (in units of pattern size) to physical location
-	static inline location_t SIDE_TO_PHYSICAL(EExitLocation side, location_t size, int32 j) {
-		switch (side) {
-		case E_TOP:
-			return { 0, j * PATTERNS_SIZE };
-		case E_BOTTOM:
-			return { size.x - PATTERNS_SIZE, j * PATTERNS_SIZE };
-		case E_LEFT:
-			return { j * PATTERNS_SIZE, 0 };
-		case E_RIGHT:
-			return { j * PATTERNS_SIZE, size.y - PATTERNS_SIZE };
-		default:
+	static inline location_t SIDE_TO_PHYSICAL(EDir side, location_t size, int32 j) {
+		if		(side == E_TOP)		return { 0,							j * PATTERNS_SIZE };
+		else if (side == E_BOTTOM)	return { size.x - PATTERNS_SIZE,	j * PATTERNS_SIZE };
+		else if (side == E_LEFT)	return { j * PATTERNS_SIZE,			0 };
+		else if (side == E_RIGHT)	return { j * PATTERNS_SIZE,			size.y - PATTERNS_SIZE };
+		else {
+			check(false);
 			return { 0, 0 };  // Should not reach. 
 		}
 	}
 
 	// Wrapper for exit location config
 	struct ExitLocation {
-		EExitLocation side{ E_LEFT };
+		EDir side{ E_LEFT };
 		int32 offset{ 0 };
 
 		inline bool operator==(const ExitLocation& other) const {

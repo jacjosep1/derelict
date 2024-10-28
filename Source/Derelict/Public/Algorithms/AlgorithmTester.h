@@ -15,5 +15,5 @@ class DERELICT_API UAlgorithmTester : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(BlueprintCallable, Category = "WFC Testing")
 	static void SimpleImageWFC(int32 SizeX, int32 SizeY, UDataTable* SeedData);
-	
+	static void SimpleGrammar();
 };

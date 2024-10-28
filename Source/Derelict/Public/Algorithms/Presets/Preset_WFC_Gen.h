@@ -4,13 +4,11 @@
 
 #include "CoreMinimal.h"
 #include <functional>
+#include <unordered_map>
+
+#include "Algorithms/array2D.h"
 
 typedef std::vector<std::vector<TCHAR>> pattern_t;
-
-// Enum/struct for defining where the exit points on the generated image should be.
-enum EExitLocation : char {
-	E_TOP, E_BOTTOM, E_LEFT, E_RIGHT
-};
 
 template<TCHAR _S_=0, TCHAR _SH=0, TCHAR _SR=0, TCHAR... _SC>
 struct Preset_WFC_Gen
@@ -42,11 +40,11 @@ struct Preset_WFC_Gen
 	};
 
 	// Defines patterns for exits on different orientations of edges. 
-	inline static constexpr const pattern_t* EXIT_PATTERNS[] {
-		& P_HALLWAY_V,
-		& P_HALLWAY_V,
-		& P_HALLWAY_H,
-		& P_HALLWAY_H,
+	inline static std::unordered_map<EDir, const pattern_t*> EXIT_PATTERNS {
+		{E_TOP,		&P_HALLWAY_V},
+		{E_BOTTOM,	&P_HALLWAY_V},
+		{E_LEFT,	&P_HALLWAY_H},
+		{E_RIGHT,	&P_HALLWAY_H},
 	};
 
 };
