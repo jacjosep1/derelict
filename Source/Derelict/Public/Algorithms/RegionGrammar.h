@@ -19,7 +19,13 @@ class RegionGrammar
 {
 	// Node structure to represent future regions
 	struct Node {
-		RegionLabel region_label{ RegionLabel::ship_medium_halls };
+		Node(const RegionLabel& _r, location_t  _l, int _d=0)
+			: region_label{ _r }, location{ _l }, depth{ _d } {}
+
+		RegionLabel region_label{ RegionLabel::none };
+		location_t location{ 0, 0 };
+		int depth{ 0 };
+
 		std::unordered_map<EDir, Node*> neighbors {
 			{E_TOP, nullptr},
 			{E_BOTTOM, nullptr},
@@ -40,5 +46,13 @@ public:
 
 	// Generate the mission objective spatial graph
 	void Generate_Graph();
+
+	void DebugPrint() const;
+
+private:
+	// Converts a graph template to an actual graph section
+	// By default graphs will be left-to-right. Set rotated=true to flip the template to up-to-down. 
+	static std::vector<Node> ConvertToGraph(const graph_template_t& templ, bool rotated=false,
+		Node* connectorL = nullptr, Node* connectorR = nullptr);
 
 };

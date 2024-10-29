@@ -28,11 +28,12 @@ namespace Preset_Grammar_Gen {
 
 	// At least one rule for each label MUST contain a non-filler rule (e.g. <hh<)
 	// (options for when max depth is reached)
+	// Each rule MUST have two >'s, one to the left of the other. 
 	static const graph_ruleset_t rules {
 		// Rules to replace ship_filler1
 		{RegionLabel::ship_filler1,{
-			{{">h>"}},
-			{{">h_>"}},
+			{">h>"},
+			{">h_>"},
 		}},
 	};
 
