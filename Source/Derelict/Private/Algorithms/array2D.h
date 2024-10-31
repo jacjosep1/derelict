@@ -44,13 +44,11 @@ static constexpr EDir E_BOTTOM = { 1, 0 };
 static constexpr EDir E_LEFT = { 0, -1 };
 static constexpr EDir E_RIGHT = { 0, 1 };
 
-namespace std {
-    template <> struct hash<location_t> {
-        std::size_t operator()(const location_t& loc) const noexcept {
-            return static_cast<size_t>(loc.x) * 31 + static_cast<size_t>(loc.y);
-        }
-    };
-}
+struct EDirHash {
+    std::size_t operator()(const EDir& dir) const noexcept {
+        return std::hash<int32_t>{}(dir.x) ^ (std::hash<int32_t>{}(dir.y) << 1);
+    }
+};
 
 /**
  * Represent a 2D array.
@@ -98,6 +96,19 @@ public:
         return get(location.x, location.y);
     }
 
+    // Return defauult value if location is out of bounds.
+    T& safe_get(location_t location, T &def) {
+        if (location.x < 0 || location.y < 0 || location.x >= height || location.y >= width)
+            return def;
+        return get(location.x, location.y);
+    }
+
+    const T& safe_get(location_t location, const T &def) const {
+        if (location.x < 0 || location.y < 0 || location.x >= height || location.y >= width)
+            return def;
+        return get(location.x, location.y);
+    }
+
     const T& get(location_t location) const {
         return get(location.x, location.y);
     }
@@ -134,6 +145,10 @@ public:
      * i must be lower than height and j lower than width.
      */
     T& get(std::size_t i, std::size_t j) noexcept {
+        check(i >= 0);
+        check(j >= 0);
+        check(i < height);
+        check(j < width);
         return data[j + i * width];
     }
 

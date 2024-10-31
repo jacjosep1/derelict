@@ -8,6 +8,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
 // Input properties
 struct RegionGrammarSettings {
@@ -26,7 +27,7 @@ class RegionGrammar
 		location_t location{ 0, 0 };
 		int depth{ 0 };
 
-		std::unordered_map<EDir, Node*> neighbors {
+		std::unordered_map<EDir, std::shared_ptr<Node>, EDirHash> neighbors {
 			{E_TOP, nullptr},
 			{E_BOTTOM, nullptr},
 			{E_LEFT, nullptr},
@@ -35,10 +36,16 @@ class RegionGrammar
 	};
 
 	// Spatial representation of general ship and mission layout
-	std::vector<Node> graph;
+	typedef std::vector<std::shared_ptr<Node>> graph_t;
+	graph_t graph;
 
 	// Input properties
 	const RegionGrammarSettings settings;
+
+	// Debugging
+	static constexpr bool DEBUG_MESSAGES{ true };
+
+	static constexpr int32 MAX_INT32 = 0x7FFFFFFF;
 
 public:
 	RegionGrammar() : settings{} {};
@@ -52,7 +59,14 @@ public:
 private:
 	// Converts a graph template to an actual graph section
 	// By default graphs will be left-to-right. Set rotated=true to flip the template to up-to-down. 
-	static std::vector<Node> ConvertToGraph(const graph_template_t& templ, bool rotated=false,
-		Node* connectorL = nullptr, Node* connectorR = nullptr);
+	struct ConvertToGraphParams {
+		bool rotated = false;
+		std::shared_ptr<Node> connectorL = nullptr;
+		std::shared_ptr<Node> connectorR = nullptr;
+		int depth = 0;
+	};
+	static graph_t ConvertToGraph(const graph_template_t& templ, const ConvertToGraphParams &params);
+
+	static location_t GraphSize(const graph_t& g);
 
 };

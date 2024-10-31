@@ -141,7 +141,7 @@ void WFC_Interface<TPreset>::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const
         PreCollapsePoints(wfc, Epoints_of_interest, TPreset::P_EMPTY_H);
 
         // Exit hallways
-        for (const auto& exit : exits) {
+        for (const ExitLocation& exit : exits) {
             if (exit.side == side)
                 Hpoints_of_interest.push_back(exit.offset_physical(size));
         }

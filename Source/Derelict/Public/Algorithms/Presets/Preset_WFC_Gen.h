@@ -40,7 +40,7 @@ struct Preset_WFC_Gen
 	};
 
 	// Defines patterns for exits on different orientations of edges. 
-	inline static std::unordered_map<EDir, const pattern_t*> EXIT_PATTERNS {
+	inline static std::unordered_map<EDir, const pattern_t*, EDirHash> EXIT_PATTERNS {
 		{E_TOP,		&P_HALLWAY_V},
 		{E_BOTTOM,	&P_HALLWAY_V},
 		{E_LEFT,	&P_HALLWAY_H},
