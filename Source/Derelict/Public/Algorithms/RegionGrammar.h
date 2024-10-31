@@ -12,7 +12,7 @@
 
 // Input properties
 struct RegionGrammarSettings {
-	int max_depth{ 3 }; // Max number of replacements from the default graph initialization
+	int max_depth{ 2 }; // Max number of replacements from the default graph initialization
 };
 
 // Class to handle initial game objective and ship layout
@@ -20,11 +20,10 @@ class RegionGrammar
 {
 	// Node structure to represent future regions
 	struct Node {
-		Node(const RegionLabel& _r, location_t  _l, int _d=0)
-			: region_label{ _r }, location{ _l }, depth{ _d } {}
+		Node(const RegionLabel& _r, int _d=0)
+			: region_label{ _r }, depth{ _d } {}
 
 		RegionLabel region_label{ RegionLabel::none };
-		location_t location{ 0, 0 };
 		int depth{ 0 };
 
 		std::unordered_map<EDir, std::shared_ptr<Node>, EDirHash> neighbors {
@@ -33,6 +32,10 @@ class RegionGrammar
 			{E_LEFT, nullptr},
 			{E_RIGHT, nullptr},
 		};
+
+		// Traversal params
+		bool visited{ false };
+		location_t location{ 0, 0 };
 	};
 
 	// Spatial representation of general ship and mission layout
@@ -66,7 +69,5 @@ private:
 		int depth = 0;
 	};
 	static graph_t ConvertToGraph(const graph_template_t& templ, const ConvertToGraphParams &params);
-
-	static location_t GraphSize(const graph_t& g);
 
 };

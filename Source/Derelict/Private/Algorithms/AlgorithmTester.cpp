@@ -16,5 +16,4 @@ void UAlgorithmTester::SimpleImageWFC(int32 SizeX, int32 SizeY, UDataTable* Seed
 void UAlgorithmTester::SimpleGrammar() {
     RegionGrammar grammar;
     grammar.Generate_Graph();
-    grammar.DebugPrint();
 }

@@ -16,7 +16,7 @@ enum class RegionLabel : char {
 	ship_objective_gen  = 'o',
 	ship_medium_halls	= 'h',
 	ship_fillerH		= '_',
-	ship_fillerV		= '|',
+	ship_fillerV		= 'V',
 };
 
 // Structures for grammar rules
@@ -53,7 +53,9 @@ namespace Preset_Grammar_Gen {
 
 	// Default graph initialization
 	static const graph_template_t START_1 {
-		"e_o",
+		"e",
+		"h",
+		"o",
 	};
 
 	// At least one rule for each label MUST contain a non-filler rule (e.g. <hh<)
@@ -71,5 +73,14 @@ namespace Preset_Grammar_Gen {
 			{">h>"},
 		}},
 	};
+
+	// Get horizontal filter of vertical filter and vice versa from rules_fillers
+	inline RegionLabel alternate_filler(RegionLabel filler) {
+		for (const auto& [filler_set, sample_space] : rules_fillers)
+			if (filler_set.contains(filler))
+				for (const auto& e : filler_set)
+					if (e != filler) return e;
+		return RegionLabel::error;
+	}
 
 }
