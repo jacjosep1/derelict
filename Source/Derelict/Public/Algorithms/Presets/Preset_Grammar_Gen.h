@@ -12,11 +12,16 @@ enum class RegionLabel : char {
 	none				= ' ',
 	error				= '?',
 	connector			= '>',
+
 	ship_entrance		= 'e',
 	ship_objective_gen  = 'o',
+
+	ship_large_halls	= 'H',
 	ship_medium_halls	= 'h',
+	ship_vents			= 'v',
+
 	ship_fillerH		= '_',
-	ship_fillerV		= 'V',
+	ship_fillerV		= '|',
 };
 
 // Structures for grammar rules
@@ -53,9 +58,11 @@ namespace Preset_Grammar_Gen {
 
 	// Default graph initialization
 	inline static const graph_template_t START_1 {
-		"e",
-		"V",
-		"o",
+		"  e  ",
+		"  |  ",
+		"h_h_h",
+		"  |  ",
+		"  o  ",
 	};
 
 	// At least one rule for each label MUST contain a non-filler rule (e.g. <hh<)
@@ -65,12 +72,37 @@ namespace Preset_Grammar_Gen {
 		// Rules to replace ship_filler1
 		{{RegionLabel::ship_fillerH, RegionLabel::ship_fillerV},{
 			{">h_>"},
+
+			{"  vv    ",
+			 ">hhvhh_>",
+			 "  hhh   "},
+
+			{">HH_>"},
+
+			{"  h  ",
+			 "  h  ",
+			 "  |  ",
+			 "  h  ",
+			 ">hhh>"},
+
+			{">hhh>",
+			 "  h  ",
+			 "  |  ",
+			 "  h  ",
+			 "  h  "},
 		}},
 	};
 	static const graph_ruleset_t rules_no_fillers{	// Rules for max-depth graphs
 		// Rules to replace ship_filler1
 		{{RegionLabel::ship_fillerH, RegionLabel::ship_fillerV},{
 			{">h>"},
+
+			{"  HH  ",
+			 ">HHHH>",
+			 "  HH  "},
+
+			{">vv  ",
+			 "  vv>"},
 		}},
 	};
 

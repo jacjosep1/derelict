@@ -12,7 +12,7 @@
 
 // Input properties
 struct RegionGrammarSettings {
-	int max_depth{ 2 }; // Max number of replacements from the default graph initialization
+	int max_depth{ 15 }; // Max number of replacements from the default graph initialization
 };
 
 // Class to handle initial game objective and ship layout

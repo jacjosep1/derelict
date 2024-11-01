@@ -117,6 +117,32 @@ void RegionGrammar::DebugPrint() const {
 		b.Append(";");
 		GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, b);
 	}
+
+	// Get graph bounds
+	location_t lbound{ MAX_INT32, MAX_INT32 };
+	location_t ubound{ MIN_int32, MIN_int32 };
+	for (const auto& node : graph) {
+		if (node->location.x > ubound.x) ubound.x = node->location.x;
+		if (node->location.y > ubound.y) ubound.y = node->location.y;
+		if (node->location.x < lbound.x) lbound.x = node->location.x;
+		if (node->location.y < lbound.y) lbound.y = node->location.y;
+	}
+
+	// Physical graph
+	for (int r = lbound.x; r <= ubound.x; r++) {
+		FString line = TEXT("$");
+		for (int c = lbound.y; c <= ubound.y; c++) {
+			char label = ' ';
+			for (const auto& node : graph)
+				if (node->location == location_t{ r,c }) {
+					label = static_cast<char>(node->region_label);
+					break;
+				}
+			line.AppendChar(label);
+		}
+		GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::White, line);
+	}
+		
 }
 
 RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& templ, 
