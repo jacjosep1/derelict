@@ -46,7 +46,7 @@ static constexpr EDir E_RIGHT = { 0, 1 };
 
 struct EDirHash {
     std::size_t operator()(const EDir& dir) const noexcept {
-        return std::hash<int32_t>{}(dir.x) ^ (std::hash<int32_t>{}(dir.y) << 1);
+        return std::hash<int32_t>{}(dir.x) * 31 + std::hash<int32_t>{}(dir.y);
     }
 };
 
@@ -96,17 +96,16 @@ public:
         return get(location.x, location.y);
     }
 
-    // Return defauult value if location is out of bounds.
-    T& safe_get(location_t location, T &def) {
+    T* safe_get(location_t location) {
         if (location.x < 0 || location.y < 0 || location.x >= height || location.y >= width)
-            return def;
-        return get(location.x, location.y);
+            return nullptr;
+        return &get(location.x, location.y);
     }
 
-    const T& safe_get(location_t location, const T &def) const {
+    const T* safe_get(location_t location) const {
         if (location.x < 0 || location.y < 0 || location.x >= height || location.y >= width)
-            return def;
-        return get(location.x, location.y);
+            return nullptr;
+        return &get(location.x, location.y);
     }
 
     const T& get(location_t location) const {

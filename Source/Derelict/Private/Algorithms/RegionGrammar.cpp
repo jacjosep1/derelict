@@ -130,7 +130,7 @@ void RegionGrammar::DebugPrint() const {
 
 	// Physical graph
 	for (int r = lbound.x; r <= ubound.x; r++) {
-		FString line = TEXT("$");
+		FString line = TEXT(" ");
 		for (int c = lbound.y; c <= ubound.y; c++) {
 			char label = ' ';
 			for (const auto& node : graph)
@@ -189,21 +189,21 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 				}
 			}
 			else { // Add new node
-				out.push_back(std::make_shared<Node>(label, params.depth));
-				added = out.back();
+				added = std::make_shared<Node>(label, params.depth);
+				out.push_back(added);
 			}
 
 			// Link back references to top & left (previously generated)
 			temp_space.get(location) = added;
-			std::shared_ptr<Node> top_ref  = temp_space.safe_get(location + E_TOP,  nullptr);
-			std::shared_ptr<Node> left_ref = temp_space.safe_get(location + E_LEFT, nullptr);
+			std::shared_ptr<Node> *top_ref  = temp_space.safe_get(location + E_TOP);
+			std::shared_ptr<Node> *left_ref = temp_space.safe_get(location + E_LEFT);
 			if (top_ref) {
-				added->neighbors[E_TOP] = top_ref;
-				top_ref->neighbors[E_BOTTOM] = added;
+				added->neighbors[E_TOP] = *top_ref;
+				(*top_ref)->neighbors[E_BOTTOM] = added;
 			}
 			if (left_ref) {
-				added->neighbors[E_LEFT] = left_ref;
-				left_ref->neighbors[E_RIGHT] = added;
+				added->neighbors[E_LEFT] = *left_ref;
+				(*left_ref)->neighbors[E_RIGHT] = added;
 			}
 
 			if (DEBUG_MESSAGES) {
@@ -225,12 +225,13 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 		for (int r = 0; r < temp_space.height; r++) for (int c = 0; c < temp_space.width; c++) {
 			auto nullnode = std::make_shared<Node>(Node(RegionLabel::error));
 			FString b = TEXT("");
-			auto& n = temp_space.safe_get(location_t{ r,c }, nullnode);
+			auto *n = temp_space.safe_get(location_t{ r,c });
 			b.AppendInt(r);
 			b.AppendInt(c);
-			if (n) {
-				b.AppendChar(static_cast<char>(n->region_label));
+			if (!n) {
+				n = &nullnode;
 			}
+			b.AppendChar(static_cast<char>((*n)->region_label));
 			GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::White, b);
 		}
 	}
