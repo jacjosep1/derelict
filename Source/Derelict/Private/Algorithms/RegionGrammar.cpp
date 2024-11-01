@@ -122,7 +122,10 @@ void RegionGrammar::DebugPrint() const {
 RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& templ, 
 	const RegionGrammar::ConvertToGraphParams& params) {
 	RegionGrammar::graph_t out;
-	Array2D<std::shared_ptr<Node>> temp_space(templ.size(), templ[0].length());
+	Array2D<std::shared_ptr<Node>> temp_space(
+		params.rotated ? templ[0].length() : templ.size(),
+		params.rotated ? templ.size() : templ[0].length()
+	);
 	bool hit_first_connector = false;
 
 	int row = 0;

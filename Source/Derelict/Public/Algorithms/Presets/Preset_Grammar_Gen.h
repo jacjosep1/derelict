@@ -52,9 +52,9 @@ namespace Preset_Grammar_Gen {
 	}
 
 	// Default graph initialization
-	static const graph_template_t START_1 {
+	inline static const graph_template_t START_1 {
 		"e",
-		"h",
+		"V",
 		"o",
 	};
 
