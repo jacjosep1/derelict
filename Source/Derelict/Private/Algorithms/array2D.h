@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 #include <vector>
+#include <optional>
 
 // Struct to represent grid locations
 /*
@@ -96,16 +97,16 @@ public:
         return get(location.x, location.y);
     }
 
-    T* safe_get(location_t location) {
+    std::optional<T> get_copy(location_t location) {
         if (location.x < 0 || location.y < 0 || location.x >= height || location.y >= width)
-            return nullptr;
-        return &get(location.x, location.y);
+            return std::nullopt;
+        return get(location.x, location.y);
     }
 
-    const T* safe_get(location_t location) const {
+    const std::optional<T> get_copy(location_t location) const {
         if (location.x < 0 || location.y < 0 || location.x >= height || location.y >= width)
-            return nullptr;
-        return &get(location.x, location.y);
+            return std::nullopt;
+        return get(location.x, location.y);
     }
 
     const T& get(location_t location) const {

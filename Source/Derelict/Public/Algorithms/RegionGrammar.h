@@ -57,7 +57,7 @@ public:
 	// Generate the mission objective spatial graph
 	void Generate_Graph();
 
-	void DebugPrint() const;
+	void DebugPrint(bool skip=false) const;
 
 private:
 	// Converts a graph template to an actual graph section

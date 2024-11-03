@@ -8,10 +8,22 @@
 #include <queue>
 
 void RegionGrammar::Generate_Graph() {
+	graph_template_t seed{
+		"  e  ",
+		"  |  ",
+		"h_h_h",
+		"  |  ",
+		"  o  ",
+	};
 	
 	// Generate default initial graph
 	if (DEBUG_MESSAGES) GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Generating initial graph"));
-	graph = ConvertToGraph(Preset_Grammar_Gen::START_1, ConvertToGraphParams());
+	ConvertToGraphParams starting_params;
+	starting_params.depth = 0;
+	starting_params.rotated = false;
+	starting_params.connectorL = nullptr;
+	starting_params.connectorR = nullptr;
+	graph = ConvertToGraph(seed, starting_params); if (DEBUG_MESSAGES) DebugPrint();
 
 	// Loop until there are no fillers. (i.e. depth has reached max)
 	for (int depth = 1; depth <= settings.max_depth; depth++) {
@@ -49,7 +61,7 @@ void RegionGrammar::Generate_Graph() {
 			for (auto &n : subgraph)
 				graph.push_back(n);
 		}
-		if (DEBUG_MESSAGES) DebugPrint();
+		if (DEBUG_MESSAGES) DebugPrint(true);
 	}
 
 	// Generate locations
@@ -61,11 +73,11 @@ void RegionGrammar::Generate_Graph() {
 
 	while (!search_queue.empty()) {
 		// Get next searched element and remove from queue
-		std::shared_ptr<Node>& current = search_queue.front();
+		std::shared_ptr<Node> current = search_queue.front();
 		search_queue.pop();
 
 		// Loop over unvisited neighbors
-		for (const auto& [dir, neighbor] : current->neighbors) {
+		for (auto [dir, neighbor] : current->neighbors) {
 			if (!neighbor || neighbor->visited) continue;
 			neighbor->location = current->location + dir;
 			neighbor->visited = true;
@@ -76,46 +88,48 @@ void RegionGrammar::Generate_Graph() {
 	if (DEBUG_MESSAGES) DebugPrint();
 }
 
-void RegionGrammar::DebugPrint() const {
-	FString s = TEXT("Graph size: ");
-	s.AppendInt(graph.size());
-	GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, s);
-	if (graph.size() == 0) return;
-	std::unordered_map<EDir, std::string, EDirHash> dir_names{
-			{E_TOP, "T:"},
-			{E_BOTTOM, "B:"},
-			{E_LEFT, "L:"},
-			{E_RIGHT, "R:"},
-	};
+void RegionGrammar::DebugPrint(bool skip) const {
+	if (!skip) {
+		FString s = TEXT("Graph size: ");
+		s.AppendInt(graph.size());
+		GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, s);
+		if (graph.size() == 0) return;
+		std::unordered_map<EDir, std::string, EDirHash> dir_names{
+				{E_TOP, "T:"},
+				{E_BOTTOM, "B:"},
+				{E_LEFT, "L:"},
+				{E_RIGHT, "R:"},
+		};
 
-	for (const auto& node : graph) {
-		FString b = TEXT("Node: ");
-		b.Append(LexToString(reinterpret_cast<size_t>(node.get()) & 0xFFFF));
-		b.Append(",");
-		b.AppendChar(static_cast<char>(node->region_label));
-		b.Append(",");
-		b.AppendInt(node->location.x);
-		b.Append(",");
-		b.AppendInt(node->location.y);
-		b.Append("; Neighbors: ");
-		std::vector<EDir> dirs {E_TOP, E_BOTTOM, E_LEFT, E_RIGHT};
-		for (const auto& dir : dirs) {
-			auto& target = node->neighbors[dir];
-			b.Append(UTF8_TO_TCHAR(dir_names[dir].c_str()));
-			if (target) {
-				b.AppendChar(static_cast<char>(target->region_label));
-				b.Append(",");
-				b.AppendInt(target->location.x);
-				b.Append(",");
-				b.AppendInt(target->location.y);
+		for (const auto& node : graph) {
+			FString b = TEXT("Node: ");
+			b.Append(LexToString(reinterpret_cast<size_t>(node.get()) & 0xFFFF));
+			b.Append(",");
+			b.AppendChar(static_cast<char>(node->region_label));
+			b.Append(",");
+			b.AppendInt(node->location.x);
+			b.Append(",");
+			b.AppendInt(node->location.y);
+			b.Append("; Neighbors: ");
+			std::vector<EDir> dirs{ E_TOP, E_BOTTOM, E_LEFT, E_RIGHT };
+			for (const auto& dir : dirs) {
+				auto& target = node->neighbors[dir];
+				b.Append(UTF8_TO_TCHAR(dir_names[dir].c_str()));
+				if (target) {
+					b.AppendChar(static_cast<char>(target->region_label));
+					b.Append(",");
+					b.AppendInt(target->location.x);
+					b.Append(",");
+					b.AppendInt(target->location.y);
+				}
+				else {
+					b.Append(" , , ");
+				}
+				b.Append(" ");
 			}
-			else {
-				b.Append(" , , ");
-			}
-			b.Append(" ");
+			b.Append(";");
+			GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, b);
 		}
-		b.Append(";");
-		GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, b);
 	}
 
 	// Get graph bounds
@@ -150,7 +164,8 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 	RegionGrammar::graph_t out;
 	Array2D<std::shared_ptr<Node>> temp_space(
 		params.rotated ? templ[0].length() : templ.size(),
-		params.rotated ? templ.size() : templ[0].length()
+		params.rotated ? templ.size() : templ[0].length(),
+		nullptr
 	);
 	bool hit_first_connector = false;
 
@@ -160,13 +175,15 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 		for (const char& c : line) {
 			
 			auto label = static_cast<RegionLabel>(c);
-			if (label == RegionLabel::none) {
-				col++; continue; // Ignore blank spots
-			}
 
 			location_t location; // new vertical, horizontal location (local)
 			if (params.rotated) location = { col, row };
 			else location = { row, col };
+
+			if (label == RegionLabel::none) {
+				temp_space.get(location).reset();
+				col++; continue; // Ignore blank spots
+			}
 
 			// Flip horizontal & vertical fillers
 			if (params.rotated && Preset_Grammar_Gen::is_filler(label)) {
@@ -195,15 +212,21 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 
 			// Link back references to top & left (previously generated)
 			temp_space.get(location) = added;
-			std::shared_ptr<Node> *top_ref  = temp_space.safe_get(location + E_TOP);
-			std::shared_ptr<Node> *left_ref = temp_space.safe_get(location + E_LEFT);
-			if (top_ref) {
-				added->neighbors[E_TOP] = *top_ref;
-				(*top_ref)->neighbors[E_BOTTOM] = added;
+			auto top_cpy  = temp_space.get_copy(location + E_TOP);
+			auto left_cpy = temp_space.get_copy(location + E_LEFT);
+			DebugPrinting::PrintLocation(location + E_LEFT, "LeftLoc: ");
+
+			if (top_cpy) {
+				auto top_ref = temp_space.get(location + E_TOP);
+				if (added) added->neighbors[E_TOP] = top_ref;
+				if (top_ref) top_ref->neighbors[E_BOTTOM] = added;
 			}
-			if (left_ref) {
-				added->neighbors[E_LEFT] = *left_ref;
-				(*left_ref)->neighbors[E_RIGHT] = added;
+			if (left_cpy) {
+				auto left_ref = temp_space.get(location + E_LEFT);
+				DebugPrinting::PrintShared(left_ref, "LeftPtr: ");
+
+				if (added) added->neighbors[E_LEFT] = left_ref;
+				if (left_ref) left_ref->neighbors[E_RIGHT] = added;
 			}
 
 			if (DEBUG_MESSAGES) {
@@ -211,30 +234,38 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 				ss.Append(LexToString(reinterpret_cast<size_t>(added.get()) & 0xFFFF));
 				ss.AppendChar(static_cast<char>(c));
 				GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, ss);
+				for (size_t i = 0; i < temp_space.height; i++) {
+					FString f = TEXT("");
+					for (size_t j = 0; j < temp_space.width; j++) {
+						f.Append(LexToString(reinterpret_cast<size_t>(temp_space.get(i, j).get()) & 0xFFFF));
+						f.Append(" ");
+					}
+					GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Blue, f);
+				}
 				GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT(""));
 			}
-
 
 			col++;
 		}
 		row++;
 	}
 
-	// Debug message
-	if (DEBUG_MESSAGES) {
-		for (int r = 0; r < temp_space.height; r++) for (int c = 0; c < temp_space.width; c++) {
-			auto nullnode = std::make_shared<Node>(Node(RegionLabel::error));
-			FString b = TEXT("");
-			auto *n = temp_space.safe_get(location_t{ r,c });
-			b.AppendInt(r);
-			b.AppendInt(c);
-			if (!n) {
-				n = &nullnode;
-			}
-			b.AppendChar(static_cast<char>((*n)->region_label));
-			GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::White, b);
-		}
-	}
+	//// Debug message
+	//if (DEBUG_MESSAGES) {
+	//	for (int r = 0; r < temp_space.height; r++) for (int c = 0; c < temp_space.width; c++) {
+	//		auto nullnode = std::make_shared<Node>(Node(RegionLabel::error));
+	//		FString b = TEXT("");
+	//		auto n = temp_space.get_copy(location_t{ r,c });
+	//		b.AppendInt(r);
+	//		b.AppendInt(c);
+	//		if (!n || !*n) {
+	//			GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::White, TEXT("E"));
+	//		} else {
+	//			//b.AppendChar(static_cast<char>((*n)->region_label));
+	//			GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::White, b);
+	//		}
+	//	}
+	//}
 
 	return out;
 }

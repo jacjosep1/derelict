@@ -58,15 +58,7 @@ namespace Preset_Grammar_Gen {
 
 	// Default graph initialization
 	inline static const graph_template_t START_1 {
-		"   e   ",
-		"   |   ",
-		"h__h__h",
-		"   |   ",
-		"h__h__h",
-		"   |   ",
-		"h__h__h",
-		"   |   ",
-		"   o   ",
+		"eh",
 	};
 
 	// At least one rule for each label MUST contain a non-filler rule (e.g. <hh<)
@@ -75,8 +67,6 @@ namespace Preset_Grammar_Gen {
 	static const graph_ruleset_t rules_fillers {	// Rules for non-max-depth graphs
 		// Rules to replace ship_filler1
 		{{RegionLabel::ship_fillerH, RegionLabel::ship_fillerV},{
-			{">_>"},
-
 			{"  |  ",
 			 " vv  ",
 			 ">hh_>",
@@ -89,9 +79,9 @@ namespace Preset_Grammar_Gen {
 			 " HH ",
 			 "  | ",},
 
-			{"  |  ",
-			 ">_h_>",
-			 "  |  "},
+			{">_h_>",},
+
+			{">_v_>",},
 		}},
 	};
 	static const graph_ruleset_t rules_no_fillers{	// Rules for max-depth graphs
