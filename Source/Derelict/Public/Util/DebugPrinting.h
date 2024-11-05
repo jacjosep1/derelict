@@ -29,6 +29,13 @@ namespace DebugPrinting {
 		s.Append(LexToString(b));
 		GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Blue, s);
 	}
+
+	inline static void PrintChar(char b, const std::string& msg = "") {
+		FString s = TEXT("Debug char: ");
+		s.Append(UTF8_TO_TCHAR(msg.c_str()));
+		s.AppendChar(b);
+		GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Cyan, s);
+	}
 	
 	inline static void PrintLocation(location_t b, const std::string& msg = "") {
 		FString s = TEXT("Debug location: ");

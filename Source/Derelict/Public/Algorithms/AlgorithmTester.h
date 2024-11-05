@@ -7,15 +7,20 @@
 
 #include "AlgorithmTester.generated.h"
 
+DECLARE_DYNAMIC_DELEGATE_FourParams(FMyEventDelegate, int32, X, int32, Y, FString, Label, int32, Scale);
+
 UCLASS()
 class DERELICT_API UAlgorithmTester : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "WFC Testing")
+	UFUNCTION(BlueprintCallable, Category = "Gen Testing")
 	static void SimpleImageWFC(int32 SizeX, int32 SizeY, UDataTable* SeedData);
 
-	UFUNCTION(BlueprintCallable, Category = "Grammar Testing")
+	UFUNCTION(BlueprintCallable, Category = "Gen Testing")
 	static void SimpleGrammar();
+
+	UFUNCTION(BlueprintCallable, Category = "Gen Testing")
+	static void TestGrammarToWFC(FMyEventDelegate delegate);
 };

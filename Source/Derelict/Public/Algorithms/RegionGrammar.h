@@ -18,6 +18,7 @@ struct RegionGrammarSettings {
 // Class to handle initial game objective and ship layout
 class RegionGrammar
 {
+public:
 	// Node structure to represent future regions
 	struct Node {
 		Node(const RegionLabel& _r, int _d=0)
@@ -38,15 +39,23 @@ class RegionGrammar
 		location_t location{ 0, 0 };
 	};
 
-	// Spatial representation of general ship and mission layout
 	typedef std::vector<std::shared_ptr<Node>> graph_t;
-	graph_t graph;
+	struct bounds_t {
+		location_t upper{ 0,0 };
+		location_t lower{ 0,0 };
+	};
+
+private:
+
+	// Spatial representation of general ship and mission layout
+	graph_t graph; 
+	bounds_t generated_bounds;
 
 	// Input properties
 	const RegionGrammarSettings settings;
 
 	// Debugging
-	static constexpr bool DEBUG_MESSAGES{ true };
+	static constexpr bool DEBUG_MESSAGES{ false };
 
 	static constexpr int32 MAX_INT32 = 0x7FFFFFFF;
 
@@ -59,6 +68,14 @@ public:
 
 	void DebugPrint(bool skip=false) const;
 
+	const graph_t& GetGraph() const {
+		return graph;
+	}
+
+	const bounds_t& GetBounds() const {
+		return generated_bounds;
+	}
+
 private:
 	// Converts a graph template to an actual graph section
 	// By default graphs will be left-to-right. Set rotated=true to flip the template to up-to-down. 
@@ -69,5 +86,7 @@ private:
 		int depth = 0;
 	};
 	static graph_t ConvertToGraph(const graph_template_t& templ, const ConvertToGraphParams &params);
+
+	RegionGrammar::bounds_t GenerateBounds();
 
 };

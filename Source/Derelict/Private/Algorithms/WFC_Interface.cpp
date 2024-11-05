@@ -5,7 +5,7 @@
 #include "Algorithms/FloodFill.h"
 
 template <typename TPreset>
-Array2D<TCHAR> WFC_Interface<TPreset>::ReadImage_CSV(UDataTable* Data, bool DebugString) {
+Array2D<TCHAR> WFC_Interface<TPreset>::ReadImage_CSV(UDataTable* Data, bool DebugString) const {
     if (!Data) {
         UE_LOG(LogTemp, Error, TEXT("DataTable null."));
         return Array2D<TCHAR>();
@@ -43,7 +43,7 @@ Array2D<TCHAR> WFC_Interface<TPreset>::ReadImage_CSV(UDataTable* Data, bool Debu
 }
 
 template <typename TPreset>
-Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size) {
+Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size, std::vector<EDir> exits_in) {
 
     // Make room for border
     auto crop_amt = PATTERNS_SIZE - 1;
@@ -63,10 +63,18 @@ Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>&
 	for (size_t i = 0; i < FAIL_COUNT; i++) { // TODO - make it so this never fails. 
 		OverlappingWFC<TCHAR> wfc(seed, options, FMath::RandRange(1, MAX_INT32));
 
-        const std::vector<ExitLocation> exits {
-            {E_LEFT, 1},
-            {E_TOP, 3}
-        };
+        // Make exits at midpoints
+        std::vector<ExitLocation> exits;
+        exits.reserve(exits_in.size());
+        for (const auto& e : exits_in) {
+            constexpr int32 DIV = 3;
+            for (int32 v = 1; v < DIV; v++)
+                exits.push_back({ e, 
+                    (e == E_TOP || e == E_BOTTOM) ?
+                    Linspace(size.x, DIV, v) / PATTERNS_SIZE :
+                    Linspace(size.y, DIV, v) / PATTERNS_SIZE
+                });
+        }
 
         PreCollapseBorder(wfc, exits);
 		auto out = wfc.run();
@@ -82,7 +90,7 @@ Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>&
             for (const auto& exit : exits)
                 if (out_cont.get(exit.offset_physical(size, true)) == TPreset::S_) { // Check for blank spot centered at the exits
                     invalidate = true;
-                    GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Invalid exit path"));
+                    if (DEBUG_MESSAGES) GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Invalid exit path"));
                 }
             if (!invalidate) {
                 // Crop to ~border
@@ -91,7 +99,7 @@ Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>&
             }
         }
         else {
-            GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("WFC constrained too much"));
+            if (DEBUG_MESSAGES) GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("WFC constrained too much"));
         }
 	}
     GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Failed WFC too many times"));
@@ -114,7 +122,7 @@ void WFC_Interface<TPreset>::PreCollapsePoints(OverlappingWFC<TCHAR>& wfc, const
         Array2D<TCHAR> fill({ PATTERNS_SIZE, PATTERNS_SIZE }, pattern);
         bool r = wfc.set_pattern(fill, point.x, point.y);
 
-        if (!r) GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Failed setpattern"));
+        if (!r) if (DEBUG_MESSAGES)  GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Failed setpattern"));
     }
 }
 

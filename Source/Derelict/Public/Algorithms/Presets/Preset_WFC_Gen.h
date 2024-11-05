@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include <functional>
 #include <unordered_map>
+#include <variant>
 
 #include "Algorithms/array2D.h"
+#include "Algorithms/Presets/Preset_Grammar_Gen.h"
 
 typedef std::vector<std::vector<TCHAR>> pattern_t;
 
@@ -53,3 +55,7 @@ template <typename T> struct is_preset_wfc_gen : std::false_type {};
 template <TCHAR... P> struct is_preset_wfc_gen<Preset_WFC_Gen<P...>> : std::true_type {};
 
 typedef Preset_WFC_Gen<'_', 'c', 'B'> PRESET_MediumHalls;
+
+
+
+

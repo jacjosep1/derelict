@@ -21,6 +21,18 @@ struct location_t {
         return location_t{ x + other.x, y + other.y };
     }
 
+    location_t operator*(const location_t& other) const {
+        return location_t{ x * other.x, y * other.y };
+    }
+
+    location_t operator*(const int32& other) const {
+        return location_t{ x * other, y * other };
+    }
+
+    location_t operator/(const int32& other) const {
+        return location_t{ x / other, y / other };
+    }
+
     location_t operator-(const location_t& other) const {
         return location_t{ x - other.x, y - other.y };
     }

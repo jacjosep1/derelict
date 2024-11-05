@@ -8,14 +8,15 @@
 #include <queue>
 
 void RegionGrammar::Generate_Graph() {
-	graph_template_t seed{
-		"  e  ",
-		"  |  ",
-		"h_h_h",
-		"  |  ",
-		"  o  ",
+	graph_template_t START_1{
+		"   e   ",
+		"   v   ",
+		"   |   ",
+		"H_hhh_t",
+		"   |   ",
+		"   o   ",
 	};
-	
+
 	// Generate default initial graph
 	if (DEBUG_MESSAGES) GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Generating initial graph"));
 	ConvertToGraphParams starting_params;
@@ -23,7 +24,8 @@ void RegionGrammar::Generate_Graph() {
 	starting_params.rotated = false;
 	starting_params.connectorL = nullptr;
 	starting_params.connectorR = nullptr;
-	graph = ConvertToGraph(seed, starting_params); if (DEBUG_MESSAGES) DebugPrint();
+	graph = ConvertToGraph(START_1, starting_params); 
+	if (DEBUG_MESSAGES) DebugPrint();
 
 	// Loop until there are no fillers. (i.e. depth has reached max)
 	for (int depth = 1; depth <= settings.max_depth; depth++) {
@@ -85,7 +87,23 @@ void RegionGrammar::Generate_Graph() {
 		}
 	}
 
+	// Get graph bounds
+	GenerateBounds();
+
 	if (DEBUG_MESSAGES) DebugPrint();
+}
+
+RegionGrammar::bounds_t RegionGrammar::GenerateBounds() {
+	location_t lbound{ MAX_INT32, MAX_INT32 };
+	location_t ubound{ MIN_int32, MIN_int32 };
+	for (const auto& node : graph) {
+		if (node->location.x > ubound.x) ubound.x = node->location.x;
+		if (node->location.y > ubound.y) ubound.y = node->location.y;
+		if (node->location.x < lbound.x) lbound.x = node->location.x;
+		if (node->location.y < lbound.y) lbound.y = node->location.y;
+	}
+	generated_bounds = { lbound, ubound };
+	return generated_bounds;
 }
 
 void RegionGrammar::DebugPrint(bool skip) const {
@@ -214,7 +232,6 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 			temp_space.get(location) = added;
 			auto top_cpy  = temp_space.get_copy(location + E_TOP);
 			auto left_cpy = temp_space.get_copy(location + E_LEFT);
-			DebugPrinting::PrintLocation(location + E_LEFT, "LeftLoc: ");
 
 			if (top_cpy) {
 				auto top_ref = temp_space.get(location + E_TOP);
@@ -223,7 +240,6 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 			}
 			if (left_cpy) {
 				auto left_ref = temp_space.get(location + E_LEFT);
-				DebugPrinting::PrintShared(left_ref, "LeftPtr: ");
 
 				if (added) added->neighbors[E_LEFT] = left_ref;
 				if (left_ref) left_ref->neighbors[E_RIGHT] = added;
@@ -249,23 +265,6 @@ RegionGrammar::graph_t RegionGrammar::ConvertToGraph(const graph_template_t& tem
 		}
 		row++;
 	}
-
-	//// Debug message
-	//if (DEBUG_MESSAGES) {
-	//	for (int r = 0; r < temp_space.height; r++) for (int c = 0; c < temp_space.width; c++) {
-	//		auto nullnode = std::make_shared<Node>(Node(RegionLabel::error));
-	//		FString b = TEXT("");
-	//		auto n = temp_space.get_copy(location_t{ r,c });
-	//		b.AppendInt(r);
-	//		b.AppendInt(c);
-	//		if (!n || !*n) {
-	//			GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::White, TEXT("E"));
-	//		} else {
-	//			//b.AppendChar(static_cast<char>((*n)->region_label));
-	//			GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::White, b);
-	//		}
-	//	}
-	//}
 
 	return out;
 }

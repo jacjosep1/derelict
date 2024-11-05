@@ -21,6 +21,7 @@ template <typename TPreset> class WFC_Interface {
 	static_assert(is_preset_wfc_gen<TPreset>::value, "Preset should be a Preset_WFC_Gen");
 
 	static constexpr int32 MAX_INT32 = 0x7FFFFFFF;
+	static constexpr bool DEBUG_MESSAGES{ false };
 
 	// WFC configuration
 	static constexpr bool			PERIODIC_INPUT = false;
@@ -62,10 +63,10 @@ public:
 	};
 
 	// Read a data table representing an image and convert into a 2D array of labels. Optionally prints the data. 
-	Array2D<TCHAR> ReadImage_CSV(UDataTable* Data, bool DebugString = false);
+	Array2D<TCHAR> ReadImage_CSV(UDataTable* Data, bool DebugString = false) const;
 
 	// Generate a region of a certain size using WFC and a seed determining pattern rules. 
-	Array2D<TCHAR> Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size);
+	Array2D<TCHAR> Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size, std::vector<EDir> exit);
 
 	// Starting from the seed, remove everything except except the locally contiguous region.
 	// If null=false, select adjacent pixels of the specified color.
@@ -80,5 +81,36 @@ public:
 	// Cropping may be necessary after doing this by pattern_size - 1. 
 	void PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const std::vector<ExitLocation>& exits);
 
+	static int32 Linspace(int32 length, int32 div, int32 pos) {
+		return length / div * pos;
+	}
+
 }; // namespace WFC_Interface
+
+template<typename Gen> struct Preset_WFC_Specification {
+	int32 scale{ 1 };
+	WFC_Interface<Gen> generator;
+	Array2D<TCHAR> seed;
+
+	Preset_WFC_Specification() = default;
+	Preset_WFC_Specification(int32 scale_, WFC_Interface<Gen> generator_) 
+		: scale{ scale_ }, generator{ generator_ } {}
+};
+
+using SPECIFICATION_VARIANT = std::variant<
+	Preset_WFC_Specification<PRESET_MediumHalls>
+>;
+
+// Regions to WFC Gens
+static std::unordered_map<RegionLabel, SPECIFICATION_VARIANT> WFC_SPECIFICATIONS {
+	{ RegionLabel::ship_entrance,      Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
+	{ RegionLabel::ship_terminal,      Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
+	{ RegionLabel::ship_vents,         Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
+	{ RegionLabel::ship_objective_gen, Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
+	{ RegionLabel::ship_medium_halls,  Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
+	{ RegionLabel::ship_large_halls,   Preset_WFC_Specification<PRESET_MediumHalls>( 2, WFC_Interface<PRESET_MediumHalls>() ) },
+};
+
+
+
 
