@@ -48,7 +48,11 @@ struct location_t {
         f.AppendInt(y);
         GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, f);
     }
+
 };
+
+static constexpr location_t MAX_LOCATION_T{ 0x7FFFFFFF, 0x7FFFFFFF };
+static constexpr location_t MIN_LOCATION_T{ -0x7FFFFFFF, -0x7FFFFFFF };
 
 // Define 4 cardinal directions in terms of location offset. 
 typedef location_t EDir;

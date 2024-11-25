@@ -7,7 +7,51 @@
 
 #include "AlgorithmTester.generated.h"
 
-DECLARE_DYNAMIC_DELEGATE_FourParams(FMyEventDelegate, int32, X, int32, Y, FString, Label, int32, Scale);
+USTRUCT(BlueprintType)
+struct FGenOutput
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+    FString Label;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+    int32 Scale;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+    FString LeftLabel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	FString RightLabel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	FString UpLabel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	FString DownLabel;
+
+};
+
+USTRUCT(BlueprintType)
+struct FWFCOutput
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	int32 ExtentX_min;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	int32 ExtentY_min;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	int32 ExtentX_max;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	int32 ExtentY_max;
+
+};
+
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FMyEventDelegate, int32, X, int32, Y, FGenOutput, GenOutput);
 
 UCLASS()
 class DERELICT_API UAlgorithmTester : public UBlueprintFunctionLibrary
@@ -22,5 +66,5 @@ public:
 	static void SimpleGrammar();
 
 	UFUNCTION(BlueprintCallable, Category = "Gen Testing")
-	static void TestGrammarToWFC(FMyEventDelegate delegate);
+	static FWFCOutput TestGrammarToWFC(FMyEventDelegate delegate);
 };

@@ -20,7 +20,11 @@ void UAlgorithmTester::SimpleGrammar() {
     grammar.DebugPrint();
 }
 
-void UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
+FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
+    FWFCOutput output{0,0,0,0};
+    location_t min_bounds = MAX_LOCATION_T;
+    location_t max_bounds = MIN_LOCATION_T;
+
     UDataTable* DT_TestSeed;
     FSoftObjectPath UnitDataTablePath = FSoftObjectPath(TEXT("/Game/Data/Seeds/DT_TestSeed.DT_TestSeed"));
     DT_TestSeed = Cast<UDataTable>(UnitDataTablePath.ResolveObject());
@@ -28,7 +32,7 @@ void UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
     if (!DT_TestSeed) DT_TestSeed = Cast<UDataTable>(UnitDataTablePath.TryLoad());
     if (!DT_TestSeed) {
         DebugPrinting::PrintBool(false, "DT Failure. ");
-        return;
+        return output;
     }
 
     WFC_Interface<PRESET_MediumHalls> wfc;
@@ -50,8 +54,6 @@ void UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
     constexpr location_t GRID_SIZE = { 32, 32 };
     for (const auto& node : graph) {
         if (!node->visited) continue;
-        //DebugPrinting::PrintLocation(node->location, "Debug: ");
-        //DebugPrinting::PrintChar(static_cast<char>(node->region_label), "Debug: ");
 
         std::vector<EDir> exit;
         exit.reserve(4);
@@ -72,11 +74,38 @@ void UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
                 if (delegate.IsBound()) {
                     location_t global_location = (location_t{ i, j } * s.scale) + offset;
                     FString LabelStr(1, &item);
-                    delegate.Execute(global_location.x, global_location.y, LabelStr, s.scale);
+
+                    FGenOutput output;
+                    output.Label = LabelStr;
+                    output.Scale = s.scale;
+
+                    // Get neighbors
+                    auto LeftOpt = generated.get_copy({ i - 1, j });
+                    auto RightOpt = generated.get_copy({ i + 1, j });
+                    auto UpOpt = generated.get_copy({ i, j - 1 });
+                    auto DownOpt = generated.get_copy({ i, j + 1 });
+                    if (LeftOpt)    output.LeftLabel    = FString(1, &*LeftOpt);
+                    if (RightOpt)   output.RightLabel   = FString(1, &*RightOpt);
+                    if (UpOpt)      output.UpLabel      = FString(1, &*UpOpt);
+                    if (DownOpt)    output.DownLabel    = FString(1, &*DownOpt);
+
+                    // Update Bounds
+                    if (global_location.x < min_bounds.x) min_bounds.x = global_location.x;
+                    if (global_location.y < min_bounds.y) min_bounds.y = global_location.y;
+                    if (global_location.x > max_bounds.x) max_bounds.x = global_location.x;
+                    if (global_location.y > max_bounds.y) max_bounds.y = global_location.y;
+
+                    delegate.Execute(global_location.x, global_location.y, output);
                 }
             }
         }, WFC_SPECIFICATIONS[node->region_label]);
 
     }
+
+    output.ExtentX_min = min_bounds.x;
+    output.ExtentX_max = max_bounds.x;
+    output.ExtentY_min = min_bounds.y;
+    output.ExtentY_max = max_bounds.y;
+    return output;
     
 }
