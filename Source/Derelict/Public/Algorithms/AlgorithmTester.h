@@ -30,6 +30,8 @@ struct FGenOutput
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
 	FString DownLabel;
 
+	FGenOutput() : Label( TEXT("E") ), LeftLabel(TEXT("E")), RightLabel( TEXT("E") ), UpLabel( TEXT("E") ), DownLabel( TEXT("E") ) {}
+
 };
 
 USTRUCT(BlueprintType)
