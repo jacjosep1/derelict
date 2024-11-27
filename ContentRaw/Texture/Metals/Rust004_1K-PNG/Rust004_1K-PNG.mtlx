@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<materialx version="1.38" fileprefix="./">
+  <standard_surface type="surfaceshader" ypos="-1.879310" name="Rust004_1K_PNG_StandardSurface" xpos="6.159420">
+    <input value="0" type="float" name="specular" />
+    <input value="1" type="float" name="coat" />
+    <input value="1, 1, 1" type="color3" name="coat_color" />
+    <input value="1" type="float" name="base" />
+    <input type="color3" name="base_color" nodename="Rust004_1K_PNG_Color" />
+    <input value="1" type="float" name="metalness" nodename="Rust004_1K_PNG_Metalness" />
+    <input type="vector3" name="normal" nodename="normalmap" />
+    <input type="vector3" name="coat_normal" nodename="normalmap" />
+    <input type="float" name="specular_roughness" nodename="Rust004_1K_PNG_Roughness" />
+    <input type="float" name="coat_roughness" nodename="Rust004_1K_PNG_Roughness" />
+  </standard_surface>
+  <surfacematerial type="material" ypos="0.000000" name="Rust004_1K_PNG" xpos="8.695652">
+    <input type="surfaceshader" name="surfaceshader" nodename="Rust004_1K_PNG_StandardSurface" />
+    <input type="displacementshader" name="displacementshader" nodename="displacement" />
+  </surfacematerial>
+  <tiledimage type="color3" ypos="-3.103448" name="Rust004_1K_PNG_Color" xpos="3.623188">
+    <input value="Rust004_1K-PNG_Color.png" type="filename" name="file" colorspace="srgb_texture" />
+    <input value="1.0, 1.0" type="vector2" name="uvtiling" />
+  </tiledimage>
+  <tiledimage type="float" ypos="5.163793" name="Rust004_1K_PNG_Displacement" xpos="3.623188">
+    <input value="Rust004_1K-PNG_Displacement.png" type="filename" name="file" />
+    <input value="1.0, 1.0" type="vector2" name="uvtiling" />
+  </tiledimage>
+  <displacement type="displacementshader" ypos="1.879310" name="displacement" xpos="6.159420">
+    <input type="float" name="displacement" nodename="Rust004_1K_PNG_Displacement" />
+    <input value="1.0" type="float" name="scale" />
+  </displacement>
+  <tiledimage type="float" ypos="-1.758621" name="Rust004_1K_PNG_Metalness" xpos="3.623188">
+    <input value="Rust004_1K-PNG_Metalness.png" type="filename" name="file" />
+    <input value="1.0, 1.0" type="vector2" name="uvtiling" />
+  </tiledimage>
+  <tiledimage type="vector3" ypos="0.879310" name="Rust004_1K_PNG_NormalGL" xpos="1.086957">
+    <input value="Rust004_1K-PNG_NormalGL.png" type="filename" name="file" />
+    <input value="1.0, 1.0" type="vector2" name="uvtiling" />
+  </tiledimage>
+  <normalmap type="vector3" ypos="3.586207" name="normalmap" xpos="3.623188">
+    <input type="vector3" name="in" nodename="Rust004_1K_PNG_NormalGL" />
+    <input value="1.0" type="float" name="scale" />
+  </normalmap>
+  <tiledimage type="float" ypos="-0.413793" name="Rust004_1K_PNG_Roughness" xpos="3.623188">
+    <input value="Rust004_1K-PNG_Roughness.png" type="filename" name="file" />
+    <input value="1.0, 1.0" type="vector2" name="uvtiling" />
+  </tiledimage>
+</materialx>
