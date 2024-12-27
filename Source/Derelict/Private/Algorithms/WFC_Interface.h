@@ -31,7 +31,7 @@ template <typename TPreset> class WFC_Interface {
 	static constexpr unsigned int	SYMMETRY = 8;
 
 	// The max number of times to fail WFC before exiting. 
-	static constexpr size_t FAIL_COUNT = 20;
+	static constexpr size_t FAIL_COUNT = 300;
 
 public:
 	// Function to convert from side offsets (in units of pattern size) to physical location
@@ -62,11 +62,31 @@ public:
 		}
 	};
 
+	// Struct for storing tile properties in addition to label. 
+	struct TileProperties {
+		TCHAR label;
+		int32 room_index;		// -1 if not a valid room
+		bool  turret_level;		// indicates if turrets should be present
+
+		TileProperties() : room_index(-1), turret_level(false) {}
+	};
+
+	// Wrapper for WFC Gen output
+	struct Generate_WFC_Region_Output {
+		Array2D<TCHAR> raw_labels;
+		Array2D<TileProperties> property_grid;
+
+		static inline Generate_WFC_Region_Output dummy() {
+			return { Array2D<TCHAR>(location_t{ 0, 0 }), Array2D<TileProperties>(location_t{ 0, 0 }) };
+		}
+	};
+
 	// Read a data table representing an image and convert into a 2D array of labels. Optionally prints the data. 
 	Array2D<TCHAR> ReadImage_CSV(UDataTable* Data, bool DebugString = false) const;
 
 	// Generate a region of a certain size using WFC and a seed determining pattern rules. 
-	Array2D<TCHAR> Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size, std::vector<EDir> exit);
+	Generate_WFC_Region_Output Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size, std::vector<EDir> exit,
+		RegionLabel region_label = RegionLabel::ship_vents);
 
 	// Starting from the seed, remove everything except except the locally contiguous region.
 	// If null=false, select adjacent pixels of the specified color.
@@ -81,20 +101,31 @@ public:
 	// Cropping may be necessary after doing this by pattern_size - 1. 
 	void PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const std::vector<ExitLocation>& exits);
 
+	// Utility functions
+
 	static int32 Linspace(int32 length, int32 div, int32 pos) {
 		return length / div * pos;
 	}
 
+	static std::vector<size_t> PickUniqueRandomInts(size_t N, size_t max, size_t min = 0);
+
 }; // namespace WFC_Interface
 
+struct Region_Properties {
+	float turret_room_density;
+	int32 turret_spacing;
+};
+
 template<typename Gen> struct Preset_WFC_Specification {
+
 	int32 scale{ 1 };
 	WFC_Interface<Gen> generator;
 	Array2D<TCHAR> seed;
 
 	Preset_WFC_Specification() = default;
-	Preset_WFC_Specification(int32 scale_, WFC_Interface<Gen> generator_) 
-		: scale{ scale_ }, generator{ generator_ } {}
+	Preset_WFC_Specification(int32 scale_, WFC_Interface<Gen> generator_)
+		: scale{ scale_ }, generator{ generator_ } {
+	}
 };
 
 using SPECIFICATION_VARIANT = std::variant<
@@ -102,13 +133,29 @@ using SPECIFICATION_VARIANT = std::variant<
 >;
 
 // Regions to WFC Gens
-static std::unordered_map<RegionLabel, SPECIFICATION_VARIANT> WFC_SPECIFICATIONS {
-	{ RegionLabel::ship_entrance,      Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
-	{ RegionLabel::ship_terminal,      Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
-	{ RegionLabel::ship_vents,         Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
-	{ RegionLabel::ship_objective_gen, Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
-	{ RegionLabel::ship_medium_halls,  Preset_WFC_Specification<PRESET_MediumHalls>( 1, WFC_Interface<PRESET_MediumHalls>() ) },
-	{ RegionLabel::ship_large_halls,   Preset_WFC_Specification<PRESET_MediumHalls>( 2, WFC_Interface<PRESET_MediumHalls>() ) },
+struct spec_wrapper {
+	SPECIFICATION_VARIANT spec;
+	Region_Properties properties;
+};
+static std::unordered_map<RegionLabel, spec_wrapper> WFC_SPECIFICATIONS {
+	{ RegionLabel::ship_entrance,      {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
+		0.5, 3
+		}}},
+	{ RegionLabel::ship_terminal,      {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
+		0.5, 3
+		}}},
+	{ RegionLabel::ship_vents,         {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
+		0.5, 3
+		}}},
+	{ RegionLabel::ship_objective_gen, {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
+		0.5, 3
+		}}},
+	{ RegionLabel::ship_medium_halls,  {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
+		0.5, 3
+		}}},
+	{ RegionLabel::ship_large_halls,   {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
+		0.5, 3
+		}}},
 };
 
 

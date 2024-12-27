@@ -9,7 +9,7 @@
 #include "Algorithms/array2D.h"
 
 namespace DebugPrinting {
-	static constexpr bool DISABLE_DEBUG{ true };
+	static constexpr bool DISABLE_DEBUG{ false };
 
 	inline static void PrintBool(bool b, const std::string &msg="") {
 		if (DISABLE_DEBUG) return;
@@ -28,6 +28,14 @@ namespace DebugPrinting {
 	}
 
 	inline static void PrintInt(int b, const std::string& msg = "") {
+		if (DISABLE_DEBUG) return;
+		FString s = TEXT("Debug int: ");
+		s.Append(UTF8_TO_TCHAR(msg.c_str()));
+		s.Append(LexToString(b));
+		GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Blue, s);
+	}
+
+	inline static void PrintFloat(float b, const std::string& msg = "") {
 		if (DISABLE_DEBUG) return;
 		FString s = TEXT("Debug int: ");
 		s.Append(UTF8_TO_TCHAR(msg.c_str()));

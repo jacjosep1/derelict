@@ -10,7 +10,7 @@ void UAlgorithmTester::SimpleImageWFC(int32 SizeX, int32 SizeY, UDataTable* Seed
     WFC_Interface<PRESET_MediumHalls> wfc;
 
     auto seed = wfc.ReadImage_CSV(SeedData);
-    auto generated = wfc.Generate_WFC_Region(seed, location_t{ SizeX, SizeY }, {E_TOP, E_LEFT});
+    auto [generated, properties] = wfc.Generate_WFC_Region(seed, location_t{ SizeX, SizeY }, {E_TOP, E_LEFT});
     generated.DebugPrint();
 }
 
@@ -38,11 +38,11 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
     WFC_Interface<PRESET_MediumHalls> wfc;
     auto TestSeed = wfc.ReadImage_CSV(DT_TestSeed);
 
-    for (const auto& [region, spec] : WFC_SPECIFICATIONS) {
+    for (const auto& [region, pair] : WFC_SPECIFICATIONS) {
         std::visit([&](auto&& s) {
             auto& non_const_s = const_cast<std::remove_const_t<std::remove_reference_t<decltype(s)>>&>(s);
             non_const_s.seed = non_const_s.generator.ReadImage_CSV(DT_TestSeed);
-        }, spec);
+        }, pair.spec);
     }
 
     RegionGrammar grammar;
@@ -65,12 +65,13 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
         // Fill with WFC specified by region label. 
         std::visit([&](auto&& s) {
             location_t modified_grid = GRID_SIZE / s.scale;
-            auto generated = s.generator.Generate_WFC_Region(s.seed, modified_grid, exit);
+            auto [generated, property_matrix] = s.generator.Generate_WFC_Region(s.seed, modified_grid, exit, node->region_label);
 
             location_t offset = node->location * GRID_SIZE;
 
             for (int32 i = 0; i < generated.height; i++) for (int32 j = 0; j < generated.width; j++) {
                 const TCHAR& item = generated.get(i, j);
+                const auto& property = property_matrix.get(i, j);
                 if (delegate.IsBound()) {
                     location_t global_location = (location_t{ i, j } * s.scale) + offset;
                     FString LabelStr(1, &item);
@@ -78,6 +79,7 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
                     FGenOutput output;
                     output.Label = LabelStr;
                     output.Scale = s.scale;
+                    output.HasTurret = property.turret_level;
 
                     // Get neighbors
                     auto LeftOpt = generated.get_copy({ i - 1, j });
@@ -98,7 +100,7 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
                     delegate.Execute(global_location.x, global_location.y, output);
                 }
             }
-        }, WFC_SPECIFICATIONS[node->region_label]);
+        }, WFC_SPECIFICATIONS[node->region_label].spec);
 
     }
 

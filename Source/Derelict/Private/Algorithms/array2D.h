@@ -80,6 +80,10 @@ public:
     std::size_t height;
     std::size_t width;
 
+    inline location_t get_size() const {
+        return { static_cast<int>(height), static_cast<int>(width) };
+    }
+
     Array2D() {}
 
     void Init(location_t size, T value) {

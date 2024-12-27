@@ -3,6 +3,11 @@
 
 #include "Algorithms/WFC_Interface.h"
 #include "Algorithms/FloodFill.h"
+#include "Util/DebugPrinting.h"
+
+#include <random>
+#include <algorithm>
+#include <variant>
 
 template <typename TPreset>
 Array2D<TCHAR> WFC_Interface<TPreset>::ReadImage_CSV(UDataTable* Data, bool DebugString) const {
@@ -43,7 +48,10 @@ Array2D<TCHAR> WFC_Interface<TPreset>::ReadImage_CSV(UDataTable* Data, bool Debu
 }
 
 template <typename TPreset>
-Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>& seed, location_t size, std::vector<EDir> exits_in) {
+WFC_Interface<TPreset>::Generate_WFC_Region_Output WFC_Interface<TPreset>::Generate_WFC_Region(
+    const Array2D<TCHAR>& seed, location_t size, std::vector<EDir> exits_in, RegionLabel region_label) {
+
+    const auto& current_region_properties = WFC_SPECIFICATIONS[region_label].properties;
 
     // Make room for border
     auto crop_amt = PATTERNS_SIZE - 1;
@@ -60,7 +68,7 @@ Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>&
 	options.ground =            GROUND;
 	options.pattern_size =      PATTERNS_SIZE;
 
-	for (size_t i = 0; i < FAIL_COUNT; i++) { // TODO - make it so this never fails. 
+	for (size_t I = 0; I < FAIL_COUNT; I++) { // TODO - make it so this never fails. 
 		OverlappingWFC<TCHAR> wfc(seed, options, FMath::RandRange(1, MAX_INT32));
 
         // Make exits at midpoints
@@ -95,7 +103,48 @@ Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>&
             if (!invalidate) {
                 // Crop to ~border
                 out_cont = out_cont.center_crop(crop_amt);
-                return out_cont;
+
+                // Generate properties grid
+                TileProperties init;
+                init.room_index = -1;
+                Array2D<TileProperties> property_grid(out_cont.get_size(), init);
+                int32 current_room = 0;
+
+                for (int32 i = 0; i < out_cont.height; i++) for (int32 j = 0; j < out_cont.width; j++) {
+                    const TCHAR& label = out_cont.get(i, j);
+                    TileProperties& property = property_grid.get(i, j);
+
+                    property.label = label;
+
+                    // Generate room IDs
+                    if (label == TPreset::SR && property.room_index < 0) { // if it is a room but has uninitialized index
+                        auto room_fill = SelectByColor(out_cont, location_t{ i, j }, TPreset::SR, false);
+                        for (size_t i_local = 0; i_local < room_fill.height; i_local++) for (size_t j_local = 0; j_local < room_fill.width; j_local++) {
+                            if (room_fill.get(i_local, j_local) == TPreset::S_) continue;
+                            TileProperties& local_property = property_grid.get(i_local, j_local);
+                            local_property.room_index = current_room;
+                        }
+                        current_room++;
+                    }
+                };
+
+                // Finish filling properties grid once we know the room IDs
+                auto max_room_id = current_room - 1;
+                auto turret_room_indices = PickUniqueRandomInts(static_cast<int>(max_room_id * current_region_properties.turret_room_density), max_room_id);
+                for (size_t i = 0; i < property_grid.height; i++) for (size_t j = 0; j < property_grid.width; j++) {
+                    TileProperties& property = property_grid.get(i, j);
+
+                    // Turrets
+                    const auto &t_spacing = current_region_properties.turret_spacing;
+                    for (const auto &id : turret_room_indices)
+                        if (id == property.room_index && i % t_spacing == 0 && j % t_spacing == 0) {
+                            property.turret_level = true;
+                            break;
+                        }
+                }
+
+                // Return final output
+                return { out_cont, property_grid };
             }
         }
         else {
@@ -103,7 +152,7 @@ Array2D<TCHAR> WFC_Interface<TPreset>::Generate_WFC_Region(const Array2D<TCHAR>&
         }
 	}
     GEngine->AddOnScreenDebugMessage(-1, 999.f, FColor::Green, TEXT("Failed WFC too many times"));
-	return Array2D<TCHAR>(location_t{0, 0});
+	return Generate_WFC_Region_Output::dummy();
 }
 
 template <typename TPreset>
@@ -160,6 +209,18 @@ void WFC_Interface<TPreset>::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const
     side_fill(subgrid_y, E_TOP);
     side_fill(subgrid_x, E_RIGHT);
     side_fill(subgrid_y, E_BOTTOM);
+}
+
+template <typename TPreset>
+std::vector<size_t> WFC_Interface<TPreset>::PickUniqueRandomInts(size_t N, size_t max, size_t min) {
+    if (N > (max - min + 1)) throw std::invalid_argument("N is larger than the range size");
+    std::vector<size_t> pool;
+    pool.reserve(max - min + 1);
+    for (size_t i = min; i <= max; i++) pool.push_back(i);
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(pool.begin(), pool.end(), g);
+    return std::vector<size_t>(pool.begin(), pool.begin() + N);
 }
 
 template class WFC_Interface<PRESET_MediumHalls>;
