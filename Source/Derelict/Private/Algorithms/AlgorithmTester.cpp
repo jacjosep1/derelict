@@ -41,7 +41,12 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate, int32 R
     for (const auto& [region, pair] : WFC_SPECIFICATIONS) {
         std::visit([&](auto&& s) {
             auto& non_const_s = const_cast<std::remove_const_t<std::remove_reference_t<decltype(s)>>&>(s);
-            non_const_s.seed = non_const_s.generator.ReadImage_CSV(SEED_PATHS[pair.properties.seed_table_id].table);
+            auto& path_prop = SEED_PATHS[pair.properties.seed_table_id];
+
+            path_prop.load();
+            non_const_s.seed = non_const_s.generator.ReadImage_CSV(path_prop.table);
+            check(non_const_s.seed.width > 0);
+            check(non_const_s.seed.height > 0);
         }, pair.spec);
     }
 

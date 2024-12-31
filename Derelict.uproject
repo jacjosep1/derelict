@@ -7,7 +7,7 @@
 		{
 			"Name": "Derelict",
 			"Type": "Runtime",
-			"LoadingPhase": "Default",
+			"LoadingPhase": "PreDefault",
 			"AdditionalDependencies": [
 				"Engine"
 			]

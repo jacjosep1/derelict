@@ -9,12 +9,11 @@
 
 void RegionGrammar::Generate_Graph() {
 	graph_template_t START_1{
-		"   e   ",
-		"   v   ",
-		"   |   ",
-		"H_hhh_t",
-		"   |   ",
-		"   o   ",
+		"  e  ",
+		"  v  ",
+		"Hhhht",
+		"  |  ",
+		"  o  ",
 	};
 
 	// Generate default initial graph

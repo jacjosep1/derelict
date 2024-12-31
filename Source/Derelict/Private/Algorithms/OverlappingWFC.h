@@ -168,11 +168,15 @@ private:
         unsigned max_j = options.periodic_input
             ? input.width
             : input.width - options.pattern_size + 1;
+        UE_LOG(LogTemp, Warning, TEXT("Pattern Size: %d, Input Size: %dx%d"), options.pattern_size, input.width, input.height);
 
         for (unsigned i = 0; i < max_i; i++) {
             for (unsigned j = 0; j < max_j; j++) {
                 // Compute the symmetries of every pattern in the image.
                 check(symmetries.size() == 8);
+                check(options.pattern_size != 0);
+                check(input.height != 0);
+                check(input.width != 0);
                 symmetries[0].data =
                     input
                     .get_sub_array(i, j, options.pattern_size, options.pattern_size)

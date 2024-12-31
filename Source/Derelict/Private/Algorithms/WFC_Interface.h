@@ -31,7 +31,7 @@ template <typename TPreset> class WFC_Interface {
 	static constexpr unsigned int	SYMMETRY = 8;
 
 	// The max number of times to fail WFC before exiting. 
-	static constexpr size_t FAIL_COUNT = 300;
+	static constexpr size_t FAIL_COUNT = 3000;
 
 public:
 	// Function to convert from side offsets (in units of pattern size) to physical location
@@ -114,14 +114,21 @@ public:
 struct SeedPathData {
 	std::string path;
 	UDataTable* table;
+	bool loaded;
 
 	SeedPathData() : table(nullptr) {}
 
-	explicit SeedPathData(std::string _path) : path(_path) {
+	void load() {
+		if (loaded) return;
 		FSoftObjectPath UnitDataTablePath = FSoftObjectPath(FString(path.c_str()));
 		table = Cast<UDataTable>(UnitDataTablePath.ResolveObject());
 		if (!table) table = Cast<UDataTable>(UnitDataTablePath.TryLoad());
+		check(table);
+
+		table->RowStruct = FImageCSV_Row::StaticStruct();
 	}
+
+	explicit SeedPathData(std::string _path) : path(_path), loaded(false), table(nullptr) {}
 };
 static std::unordered_map<char, SeedPathData> SEED_PATHS = { // List seed paths here
 	{'v', SeedPathData("/Game/Data/Seeds/seed_vent.seed_vent")},
