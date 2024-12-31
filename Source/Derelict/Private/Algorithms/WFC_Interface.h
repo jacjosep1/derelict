@@ -111,9 +111,27 @@ public:
 
 }; // namespace WFC_Interface
 
+struct SeedPathData {
+	std::string path;
+	UDataTable* table;
+
+	SeedPathData() : table(nullptr) {}
+
+	explicit SeedPathData(std::string _path) : path(_path) {
+		FSoftObjectPath UnitDataTablePath = FSoftObjectPath(FString(path.c_str()));
+		table = Cast<UDataTable>(UnitDataTablePath.ResolveObject());
+		if (!table) table = Cast<UDataTable>(UnitDataTablePath.TryLoad());
+	}
+};
+static std::unordered_map<char, SeedPathData> SEED_PATHS = { // List seed paths here
+	{'v', SeedPathData("/Game/Data/Seeds/seed_vent.seed_vent")},
+	{'h', SeedPathData("/Game/Data/Seeds/seed_h.seed_h")}
+};
+
 struct Region_Properties {
 	float turret_room_density;
 	int32 turret_spacing;
+	char seed_table_id;
 };
 
 template<typename Gen> struct Preset_WFC_Specification {
@@ -137,24 +155,24 @@ struct spec_wrapper {
 	SPECIFICATION_VARIANT spec;
 	Region_Properties properties;
 };
-static std::unordered_map<RegionLabel, spec_wrapper> WFC_SPECIFICATIONS {
+static std::unordered_map<RegionLabel, spec_wrapper> WFC_SPECIFICATIONS{
 	{ RegionLabel::ship_entrance,      {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
-		0.5, 3
+		0.5, 3, 'v'
 		}}},
 	{ RegionLabel::ship_terminal,      {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
-		0.5, 3
+		0.5, 3, 'v'
 		}}},
 	{ RegionLabel::ship_vents,         {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
-		0.5, 3
+		0.5, 3, 'v'
 		}}},
 	{ RegionLabel::ship_objective_gen, {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
-		0.5, 3
+		0.5, 3, 'h'
 		}}},
 	{ RegionLabel::ship_medium_halls,  {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
-		0.5, 3
+		0.5, 3, 'h'
 		}}},
 	{ RegionLabel::ship_large_halls,   {Preset_WFC_Specification<PRESET_MediumHalls>(1, WFC_Interface<PRESET_MediumHalls>()), Region_Properties{
-		0.5, 3
+		0.5, 3, 'h'
 		}}},
 };
 

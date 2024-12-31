@@ -33,7 +33,10 @@ struct FGenOutput
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
 	bool HasTurret;
 
-	FGenOutput() : Label( TEXT("E") ), LeftLabel(TEXT("E")), RightLabel( TEXT("E") ), UpLabel( TEXT("E") ), DownLabel( TEXT("E") ), HasTurret(false) {}
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	FString Region_Label;
+
+	FGenOutput() : Label( TEXT("E") ), LeftLabel(TEXT("E")), RightLabel( TEXT("E") ), UpLabel( TEXT("E") ), DownLabel( TEXT("E") ), HasTurret(false), Region_Label(" ") {}
 
 };
 
@@ -71,5 +74,5 @@ public:
 	static void SimpleGrammar();
 
 	UFUNCTION(BlueprintCallable, Category = "Gen Testing")
-	static FWFCOutput TestGrammarToWFC(FMyEventDelegate delegate);
+	static FWFCOutput TestGrammarToWFC(FMyEventDelegate delegate, int32 RegionSize, int32 GrammarDepth);
 };

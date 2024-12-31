@@ -214,6 +214,8 @@ void WFC_Interface<TPreset>::PreCollapseBorder(OverlappingWFC<TCHAR>& wfc, const
 template <typename TPreset>
 std::vector<size_t> WFC_Interface<TPreset>::PickUniqueRandomInts(size_t N, size_t max, size_t min) {
     if (N > (max - min + 1)) throw std::invalid_argument("N is larger than the range size");
+    if (N == 0) return {};
+
     std::vector<size_t> pool;
     pool.reserve(max - min + 1);
     for (size_t i = min; i <= max; i++) pool.push_back(i);

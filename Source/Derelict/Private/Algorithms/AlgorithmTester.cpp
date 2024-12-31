@@ -20,12 +20,12 @@ void UAlgorithmTester::SimpleGrammar() {
     grammar.DebugPrint();
 }
 
-FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
+FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate, int32 RegionSize, int32 GrammarDepth) {
     FWFCOutput output{0,0,0,0};
     location_t min_bounds = MAX_LOCATION_T;
     location_t max_bounds = MIN_LOCATION_T;
 
-    UDataTable* DT_TestSeed;
+    /*UDataTable* DT_TestSeed;
     FSoftObjectPath UnitDataTablePath = FSoftObjectPath(TEXT("/Game/Data/Seeds/DT_TestSeed.DT_TestSeed"));
     DT_TestSeed = Cast<UDataTable>(UnitDataTablePath.ResolveObject());
 
@@ -33,25 +33,27 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
     if (!DT_TestSeed) {
         DebugPrinting::PrintBool(false, "DT Failure. ");
         return output;
-    }
+    }*/
 
-    WFC_Interface<PRESET_MediumHalls> wfc;
-    auto TestSeed = wfc.ReadImage_CSV(DT_TestSeed);
+    //WFC_Interface<PRESET_MediumHalls> wfc;
+    //auto TestSeed = wfc.ReadImage_CSV(DT_TestSeed);
 
     for (const auto& [region, pair] : WFC_SPECIFICATIONS) {
         std::visit([&](auto&& s) {
             auto& non_const_s = const_cast<std::remove_const_t<std::remove_reference_t<decltype(s)>>&>(s);
-            non_const_s.seed = non_const_s.generator.ReadImage_CSV(DT_TestSeed);
+            non_const_s.seed = non_const_s.generator.ReadImage_CSV(SEED_PATHS[pair.properties.seed_table_id].table);
         }, pair.spec);
     }
 
-    RegionGrammar grammar;
+    RegionGrammarSettings grammar_settings;
+    grammar_settings.max_depth = GrammarDepth;
+    RegionGrammar grammar(grammar_settings);
     grammar.Generate_Graph();
     grammar.DebugPrint();
     RegionGrammar::graph_t graph = grammar.GetGraph();
     DebugPrinting::PrintInt(graph.size(), "GRAPH SIZE: ");
 
-    constexpr location_t GRID_SIZE = { 32, 32 };
+    const location_t GRID_SIZE = { RegionSize, RegionSize };
     for (const auto& node : graph) {
         if (!node->visited) continue;
 
@@ -80,6 +82,10 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate) {
                     output.Label = LabelStr;
                     output.Scale = s.scale;
                     output.HasTurret = property.turret_level;
+
+                    char converted_char = static_cast<char>(node->region_label);
+                    FString ConvertedString(1, &converted_char);
+                    output.Region_Label = ConvertedString;
 
                     // Get neighbors
                     auto LeftOpt = generated.get_copy({ i - 1, j });
