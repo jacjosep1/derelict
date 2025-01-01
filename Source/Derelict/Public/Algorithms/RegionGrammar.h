@@ -34,6 +34,13 @@ public:
 			{E_RIGHT, nullptr},
 		};
 
+		std::vector<EDir> GetOpenSides() { // Determine which sides of the ship should have windows, etc...
+			std::vector<EDir> output;
+			for (const auto& [dir, ptr] : neighbors)
+				if (!ptr) output.push_back(dir);
+			return output;
+		}
+
 		// Traversal params
 		bool visited{ false };
 		location_t location{ 0, 0 };

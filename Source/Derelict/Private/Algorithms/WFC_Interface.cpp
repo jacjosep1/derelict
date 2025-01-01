@@ -104,12 +104,19 @@ WFC_Interface<TPreset>::Generate_WFC_Region_Output WFC_Interface<TPreset>::Gener
                 // Crop to ~border
                 out_cont = out_cont.center_crop(crop_amt);
 
-                // Generate properties grid
+                // Generate properties grid - init
                 TileProperties init;
                 init.room_index = -1;
                 Array2D<TileProperties> property_grid(out_cont.get_size(), init);
                 int32 current_room = 0;
+                std::unordered_map<EDir, int32, EDirHash> edge_boundaries{
+                    { E_TOP, MAX_INT32 },
+                    { E_BOTTOM, 0 },
+                    { E_LEFT, MAX_INT32 },
+                    { E_RIGHT, 0 },
+                };
 
+                // Generate properties grid - first pass
                 for (int32 i = 0; i < out_cont.height; i++) for (int32 j = 0; j < out_cont.width; j++) {
                     const TCHAR& label = out_cont.get(i, j);
                     TileProperties& property = property_grid.get(i, j);
@@ -126,9 +133,17 @@ WFC_Interface<TPreset>::Generate_WFC_Region_Output WFC_Interface<TPreset>::Gener
                         }
                         current_room++;
                     }
+
+                    // Find tile boundaries for finding edge tiles
+                    if (label != TPreset::S_) {
+                        if (i < edge_boundaries[E_TOP])    edge_boundaries[E_TOP]    = i;
+                        if (j < edge_boundaries[E_LEFT])   edge_boundaries[E_LEFT]   = j;
+                        if (i > edge_boundaries[E_BOTTOM]) edge_boundaries[E_BOTTOM] = i;
+                        if (j > edge_boundaries[E_RIGHT])  edge_boundaries[E_RIGHT]  = j;
+                    }
                 };
 
-                // Finish filling properties grid once we know the room IDs
+                // Generate properties grid - second pass
                 auto max_room_id = current_room - 1;
                 auto turret_room_indices = PickUniqueRandomInts(static_cast<int>(max_room_id * current_region_properties.turret_room_density), max_room_id);
                 for (size_t i = 0; i < property_grid.height; i++) for (size_t j = 0; j < property_grid.width; j++) {
@@ -141,6 +156,12 @@ WFC_Interface<TPreset>::Generate_WFC_Region_Output WFC_Interface<TPreset>::Gener
                             property.turret_level = true;
                             break;
                         }
+
+                    // Set edge tiles
+                    if (i == edge_boundaries[E_TOP])    property.edge_indicators[E_TOP]    = true;
+                    if (j == edge_boundaries[E_LEFT])   property.edge_indicators[E_LEFT]   = true;
+                    if (i == edge_boundaries[E_BOTTOM]) property.edge_indicators[E_BOTTOM] = true;
+                    if (j == edge_boundaries[E_RIGHT])  property.edge_indicators[E_RIGHT]  = true;
                 }
 
                 // Return final output

@@ -4,8 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Algorithms/array2D.h"
 
 #include "AlgorithmTester.generated.h"
+
+UENUM(BlueprintType)
+enum class BP_Dir : uint8
+{
+	None UMETA(DisplayName = "None"),
+	Top UMETA(DisplayName = "Top"),
+	Left UMETA(DisplayName = "Left"),
+	Right UMETA(DisplayName = "Right"),
+	Bottom UMETA(DisplayName = "Bottom")
+};
 
 USTRUCT(BlueprintType)
 struct FGenOutput
@@ -36,7 +47,15 @@ struct FGenOutput
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
 	FString Region_Label;
 
-	FGenOutput() : Label( TEXT("E") ), LeftLabel(TEXT("E")), RightLabel( TEXT("E") ), UpLabel( TEXT("E") ), DownLabel( TEXT("E") ), HasTurret(false), Region_Label(" ") {}
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	TArray<float> UniformProcess;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	BP_Dir WindowPlacement;
+
+	FGenOutput() : Label( TEXT("E") ), LeftLabel(TEXT("E")), RightLabel( TEXT("E") ), UpLabel( TEXT("E") ), DownLabel( TEXT("E") ), 
+		HasTurret(false), Region_Label(" "), UniformProcess{}, WindowPlacement(BP_Dir::None) {
+	}
 
 };
 
@@ -75,4 +94,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Gen Testing")
 	static FWFCOutput TestGrammarToWFC(FMyEventDelegate delegate, int32 RegionSize, int32 GrammarDepth);
+
+private:
+	static TArray<float> GenerateRandomFloats(int count);
+	static BP_Dir ConvertDir(const EDir& dir);
 };

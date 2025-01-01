@@ -5,6 +5,7 @@
 #include "Algorithms/WFC_Interface.h"
 #include "Algorithms/RegionGrammar.h"
 #include "Util/DebugPrinting.h"
+#include "Math/UnrealMathUtility.h"
 
 void UAlgorithmTester::SimpleImageWFC(int32 SizeX, int32 SizeY, UDataTable* SeedData) {
     WFC_Interface<PRESET_MediumHalls> wfc;
@@ -20,24 +21,27 @@ void UAlgorithmTester::SimpleGrammar() {
     grammar.DebugPrint();
 }
 
+TArray<float> UAlgorithmTester::GenerateRandomFloats(int count) {
+    TArray<float> randomFloats;
+    randomFloats.Reserve(count);
+    for (int i = 0; i < count; i++) randomFloats.Add(FMath::FRand());
+    return randomFloats;
+}
+
+BP_Dir UAlgorithmTester::ConvertDir(const EDir &dir) {
+    if (dir == E_TOP) return BP_Dir::Top;
+    if (dir == E_BOTTOM) return BP_Dir::Bottom;
+    if (dir == E_LEFT) return BP_Dir::Left;
+    if (dir == E_RIGHT) return BP_Dir::Right;
+    return BP_Dir::None;
+}
+
 FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate, int32 RegionSize, int32 GrammarDepth) {
     FWFCOutput output{0,0,0,0};
     location_t min_bounds = MAX_LOCATION_T;
     location_t max_bounds = MIN_LOCATION_T;
 
-    /*UDataTable* DT_TestSeed;
-    FSoftObjectPath UnitDataTablePath = FSoftObjectPath(TEXT("/Game/Data/Seeds/DT_TestSeed.DT_TestSeed"));
-    DT_TestSeed = Cast<UDataTable>(UnitDataTablePath.ResolveObject());
-
-    if (!DT_TestSeed) DT_TestSeed = Cast<UDataTable>(UnitDataTablePath.TryLoad());
-    if (!DT_TestSeed) {
-        DebugPrinting::PrintBool(false, "DT Failure. ");
-        return output;
-    }*/
-
-    //WFC_Interface<PRESET_MediumHalls> wfc;
-    //auto TestSeed = wfc.ReadImage_CSV(DT_TestSeed);
-
+    // Load Seeds
     for (const auto& [region, pair] : WFC_SPECIFICATIONS) {
         std::visit([&](auto&& s) {
             auto& non_const_s = const_cast<std::remove_const_t<std::remove_reference_t<decltype(s)>>&>(s);
@@ -50,6 +54,7 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate, int32 R
         }, pair.spec);
     }
 
+    // Generate mission graph
     RegionGrammarSettings grammar_settings;
     grammar_settings.max_depth = GrammarDepth;
     RegionGrammar grammar(grammar_settings);
@@ -58,6 +63,7 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate, int32 R
     RegionGrammar::graph_t graph = grammar.GetGraph();
     DebugPrinting::PrintInt(graph.size(), "GRAPH SIZE: ");
 
+    // Perform WFC on each graph node
     const location_t GRID_SIZE = { RegionSize, RegionSize };
     for (const auto& node : graph) {
         if (!node->visited) continue;
@@ -87,6 +93,22 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate, int32 R
                     output.Label = LabelStr;
                     output.Scale = s.scale;
                     output.HasTurret = property.turret_level;
+                    output.UniformProcess = GenerateRandomFloats(20);
+
+                    // Edge detection for windows
+                    for (const auto& [dir, is_edge] : property.edge_indicators)
+                        if (is_edge) {
+                            bool found = false;
+                            for (const auto& local_dir : node->GetOpenSides()) // make sure edge matches with an open side of the region
+                                if (local_dir == dir) {
+                                    found = true;
+                                    break;
+                                }
+                            if (found) {
+                                output.WindowPlacement = ConvertDir(dir);
+                                break;
+                            }
+                        }
 
                     char converted_char = static_cast<char>(node->region_label);
                     FString ConvertedString(1, &converted_char);

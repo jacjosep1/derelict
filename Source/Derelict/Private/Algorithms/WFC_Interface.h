@@ -68,7 +68,15 @@ public:
 		int32 room_index;		// -1 if not a valid room
 		bool  turret_level;		// indicates if turrets should be present
 
-		TileProperties() : room_index(-1), turret_level(false) {}
+		std::unordered_map<EDir, bool, EDirHash> edge_indicators; // indicated which tiles are at the edge of this region
+
+		TileProperties() : room_index(-1), turret_level(false), 
+			edge_indicators{
+				{ E_TOP, false },
+				{ E_BOTTOM, false },
+				{ E_LEFT, false },
+				{ E_RIGHT, false },
+		} {}
 	};
 
 	// Wrapper for WFC Gen output
@@ -111,6 +119,7 @@ public:
 
 }; // namespace WFC_Interface
 
+// Util struct for loading and storing WFC seed tables
 struct SeedPathData {
 	std::string path;
 	UDataTable* table;
@@ -128,13 +137,14 @@ struct SeedPathData {
 		table->RowStruct = FImageCSV_Row::StaticStruct();
 	}
 
-	explicit SeedPathData(std::string _path) : path(_path), loaded(false), table(nullptr) {}
+	explicit SeedPathData(std::string _path) : path(_path), table(nullptr), loaded(false) {}
 };
-static std::unordered_map<char, SeedPathData> SEED_PATHS = { // List seed paths here
+static std::unordered_map<char, SeedPathData> SEED_PATHS = { // List seed datatable paths here
 	{'v', SeedPathData("/Game/Data/Seeds/seed_vent.seed_vent")},
 	{'h', SeedPathData("/Game/Data/Seeds/seed_h.seed_h")}
 };
 
+// Struct listing properties associated with each type of region
 struct Region_Properties {
 	float turret_room_density;
 	int32 turret_spacing;
