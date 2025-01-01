@@ -31,7 +31,7 @@ template <typename TPreset> class WFC_Interface {
 	static constexpr unsigned int	SYMMETRY = 8;
 
 	// The max number of times to fail WFC before exiting. 
-	static constexpr size_t FAIL_COUNT = 3000;
+	static constexpr size_t FAIL_COUNT = 100;
 
 public:
 	// Function to convert from side offsets (in units of pattern size) to physical location
