@@ -94,6 +94,7 @@ FWFCOutput UAlgorithmTester::TestGrammarToWFC(FMyEventDelegate delegate, int32 R
                     output.Scale = s.scale;
                     output.HasTurret = property.turret_level;
                     output.UniformProcess = GenerateRandomFloats(20);
+                    output.derelictness = FastNoiseContainer::derelictness.GetValue(i, j);
 
                     // Edge detection for windows
                     for (const auto& [dir, is_edge] : property.edge_indicators)

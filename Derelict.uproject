@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.4",
+	"EngineAssociation": "{E40C5131-4FD5-8B8C-FCD3-8E9690B7E108}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -13,10 +13,10 @@
 			]
 		},
 		{
-      			"Name": "XmlParser",
-      			"Type": "Runtime",
-      			"LoadingPhase": "Default"
-    		}
+			"Name": "XmlParser",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
 	],
 	"Plugins": [
 		{
@@ -42,6 +42,11 @@
 		{
 			"Name": "OnlineSubsystemSteam",
 			"Enabled": true
+		},
+		{
+			"Name": "Perlin_Noise",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/89195b347a1d4418ba7da964f2ab8e33"
 		}
 	]
 }

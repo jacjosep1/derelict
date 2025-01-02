@@ -4,9 +4,28 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "Algorithms/array2D.h"
+#include "Algorithms/PerlinNoiseBPLibrary.h"
+#include "Algorithms/array2d.h"
 
 #include "AlgorithmTester.generated.h"
+
+namespace FastNoiseContainer {
+	class FastNoiseInstance {
+		int seed;
+		float scale;
+	public:
+		FastNoiseInstance(float scale_) : scale(scale_) {
+			seed = FMath::RandRange(0, 10000);
+		}
+
+		float GetValue(int x, int y) {
+			UPerlinNoiseBPLibrary::SetSeed(seed);
+			return UPerlinNoiseBPLibrary::TwoD_Perlin_Noise(x, y, scale, 1);
+		}
+	};
+
+	static FastNoiseInstance derelictness{.2};
+};
 
 UENUM(BlueprintType)
 enum class BP_Dir : uint8
@@ -52,6 +71,9 @@ struct FGenOutput
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
 	BP_Dir WindowPlacement;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gen Testing")
+	float derelictness;
 
 	FGenOutput() : Label( TEXT("E") ), LeftLabel(TEXT("E")), RightLabel( TEXT("E") ), UpLabel( TEXT("E") ), DownLabel( TEXT("E") ), 
 		HasTurret(false), Region_Label(" "), UniformProcess{}, WindowPlacement(BP_Dir::None) {
